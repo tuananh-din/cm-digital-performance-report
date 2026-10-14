@@ -1,0 +1,1501 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CM Digital Performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+/* Digital Performance monthly report — tokens first, light + dark (OS or toggle). */
+:root {
+  color-scheme: light;
+  --bg: #f7f9ff;
+  --bg-glow: #e3ecff;
+  --surface: #ffffff;
+  --surface-2: #f5f8fe;
+  --border: #e3e9f5;
+  --grid: #edf1f8;
+  --ink: #141416;
+  --ink-2: #4c5160;
+  --muted: #838a99;
+  --brand: #2e6ff2;          /* series-1 bars / headline numbers (blue, as in the CM dashboards) */
+  --brand-soft: #4a74d6;     /* captions under KPIs */
+  --brand-tint: #e8f0fe;
+  --series2: #eb6834;        /* second bar series (organic, followers) — validated with brand */
+  --line: #e5383b;           /* metric line on combo charts (CIR, ROAS, Cost/Message) */
+  --line2: #8b5cf6;          /* second metric line (Cost/Comment) */
+  --context: #d6dbe5;        /* de-emphasised bars */
+  --q1: #86aaf5;             /* lighter blue: month revenue that missed target */
+  --good: #12795a;
+  --bad: #c0261c;
+  --warn: #a86a00;
+  --shadow: 0 1px 2px rgba(20, 10, 10, .04), 0 12px 32px rgba(20, 50, 120, .07);
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111318; --bg-glow: #142040; --surface: #1a1c22; --surface-2: #21242c;
+    --border: #2b2f3a; --grid: #272a33; --ink: #f3f4f7; --ink-2: #c3c7d1; --muted: #8b91a0;
+    --brand: #5b8ff7; --brand-soft: #7fa6f5; --brand-tint: #1a2440; --series2: #d9632d; --line: #f05a5c; --line2: #9474f0;
+    --context: #3f434c; --q1: #2f5bb0; --good: #4cc39a; --bad: #ff7a70; --warn: #e0a640;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111318; --bg-glow: #142040; --surface: #1a1c22; --surface-2: #21242c;
+    --border: #2b2f3a; --grid: #272a33; --ink: #f3f4f7; --ink-2: #c3c7d1; --muted: #8b91a0;
+    --brand: #5b8ff7; --brand-soft: #7fa6f5; --brand-tint: #1a2440; --series2: #d9632d; --line: #f05a5c; --line2: #9474f0;
+    --context: #3f434c; --q1: #2f5bb0; --good: #4cc39a; --bad: #ff7a70; --warn: #e0a640;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.25);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink);
+  background: radial-gradient(1200px 600px at 100% 0%, var(--bg-glow), transparent 70%), var(--bg);
+}
+.page { max-width: 1480px; margin: 0 auto; padding: 36px clamp(16px, 3vw, 44px) 48px; }
+h1, h2, h3, p { margin: 0; }
+
+/* ---------- hero ---------- */
+.hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.eyebrow { font-size: clamp(20px, 2.2vw, 30px); font-weight: 800; letter-spacing: -.01em; }
+.hero h1 { font-size: clamp(40px, 6vw, 76px); line-height: 1; font-weight: 800; color: var(--brand); letter-spacing: -.03em; margin-top: 2px; }
+.hero-sub { margin-top: 12px; color: var(--ink-2); font-size: 15px; }
+.hero-sub b { color: var(--ink); }
+.hero-controls { display: flex; gap: 10px; align-items: flex-end; }
+.month-pick { display: grid; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.month-pick select, .theme-btn {
+  font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; min-height: 44px; padding: 0 14px; box-shadow: var(--shadow); cursor: pointer;
+}
+.theme-btn { width: 44px; padding: 0; font-size: 18px; }
+select:focus-visible, button:focus-visible, th:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent); outline-offset: 2px; }
+
+/* ---------- KPI ---------- */
+.kpi-hero { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 22px 8px; }
+.kpi { text-align: center; padding: 4px 14px; border-right: 1px solid var(--border); min-width: 0; }
+.kpi:last-child { border-right: 0; }
+.kpi .lbl { font-size: 15px; font-weight: 700; }
+.kpi .val { font-size: clamp(30px, 3.4vw, 50px); font-weight: 800; color: var(--brand); letter-spacing: -.03em; line-height: 1.15; margin: 4px 0 2px; white-space: nowrap; }
+.kpi .val small { font-size: .55em; font-weight: 700; }
+.kpi .sub { font-size: 13px; color: var(--brand-soft); font-weight: 500; }
+.delta { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--ink-2); }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); }
+
+.kpi-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin: 14px 0 18px; }
+.chip { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 0; }
+.chip .lbl { font-size: 12px; color: var(--muted); font-weight: 600; }
+.chip .val { font-size: 22px; font-weight: 800; margin-top: 2px; letter-spacing: -.02em; }
+.chip .sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+/* ---------- alert ---------- */
+.alert { display: flex; gap: 16px; align-items: flex-start; padding: 16px 20px; border-radius: 16px; margin-bottom: 18px;
+  background: var(--brand-tint); border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent); }
+.alert .ico { flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; }
+.alert h4 { margin: 0 0 4px; font-size: 15px; }
+.alert p { font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+.alert b { color: var(--ink); }
+
+/* ---------- cards / grid ---------- */
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; }
+.span-4 { grid-column: span 4; } .span-5 { grid-column: span 5; } .span-7 { grid-column: span 7; }
+.span-8 { grid-column: span 8; } .span-12 { grid-column: span 12; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; box-shadow: var(--shadow); min-width: 0; }
+.card-head { margin-bottom: 14px; }
+.card-head.row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.card-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.card-head h3 { font-size: 15px; font-weight: 700; }
+.card-head p { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.section-title { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 26px 0 12px; }
+.section-title h2 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+.section-title p { font-size: 13px; color: var(--muted); }
+.chart-box { position: relative; height: 190px; }
+.chart-box.tall { height: 400px; }
+.mini { padding: 16px 18px; }
+.legend-row { display: flex; gap: 16px; font-size: 12.5px; color: var(--ink-2); margin: -4px 0 8px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.sw.s1 { background: var(--brand); } .sw.s2 { background: var(--series2); }
+
+/* ---------- bullet (target achievement) ---------- */
+.bullet { display: grid; gap: 7px; }
+.b-row { display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 12px; font-size: 13.5px; }
+.b-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-track { position: relative; height: 22px; background: var(--surface-2); border-radius: 6px; }
+.b-fill { position: absolute; left: 0; top: 3px; bottom: 3px; background: var(--brand); border-radius: 0 4px 4px 0; transition: width .6s ease; }
+.b-fill.under { background: color-mix(in srgb, var(--brand) 45%, var(--context)); }
+.b-fill.over::after { content: "⟫"; position: absolute; right: -2px; top: 50%; transform: translate(100%, -50%); color: var(--brand); font-weight: 800; font-size: 13px; padding-left: 3px; }
+.b-target { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); border-radius: 1px; }
+.b-val { text-align: right; font-weight: 700; white-space: nowrap; }
+.b-val .st { font-size: 11px; margin-left: 4px; }
+.b-val .st.ok { color: var(--good); } .b-val .st.no { color: var(--bad); }
+.b-sub { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+.b-axis { display: grid; grid-template-columns: 150px 1fr 150px; gap: 12px; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.b-axis div { position: relative; height: 14px; }
+.b-axis div span { position: absolute; transform: translateX(-50%); }
+
+/* ---------- funnel ---------- */
+.funnel { display: grid; gap: 10px; }
+.f-step { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: center; }
+.f-lbl { font-size: 13.5px; font-weight: 600; text-align: right; color: var(--ink-2); }
+.f-bar { height: 40px; border-radius: 0 6px 6px 0; display: flex; align-items: center; padding: 0 12px; color: #fff; font-weight: 800; font-size: 16px; min-width: 64px; white-space: nowrap; }
+.f-conv { grid-column: 2; font-size: 12px; color: var(--muted); margin: -4px 0 0 2px; }
+.f-conv b { color: var(--ink); }
+.f-split { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
+.f-split h4 { margin: 0 0 8px; font-size: 13px; font-weight: 700; }
+.mini-rank { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; font-size: 12.5px; }
+.mini-rank div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--grid); padding-bottom: 3px; }
+.mini-rank span:last-child { font-weight: 700; }
+
+/* ---------- matrix table ---------- */
+.table-wrap { overflow-x: auto; margin: 0 -6px; }
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+.matrix th { text-align: right; font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 8px 8px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+.matrix th:first-child, .matrix td:first-child { text-align: left; }
+.matrix th.sorted { color: var(--brand); }
+.matrix th.sorted::after { content: attr(data-dir); margin-left: 3px; }
+.matrix td { padding: 7px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+.matrix tr:hover td { background: var(--surface-2); }
+.matrix tfoot td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: 0; }
+.cell { position: relative; display: inline-block; min-width: 84px; padding: 2px 0; }
+.cell i { position: absolute; right: 0; bottom: -1px; height: 3px; border-radius: 2px; background: var(--brand); opacity: .85; }
+.cell.n i { background: var(--series2); }
+.cell b { position: relative; font-weight: 600; }
+.shop-cell { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.pill { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-2); }
+.pill.tier { color: var(--brand); } .pill.tier.pd { color: var(--series2); } .pill.tier.ka { color: var(--warn); }
+.legend-inline { display: flex; gap: 6px; }
+.flag { color: var(--bad); font-weight: 800; }
+.good-t { color: var(--good); font-weight: 700; } .bad-t { color: var(--bad); font-weight: 700; }
+
+/* ---------- takeaways ---------- */
+.overall { padding: 14px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 14px; font-size: 14px; line-height: 1.6; }
+.overall b { color: var(--ink); }
+.overall .act { display: block; margin-top: 6px; color: var(--brand); font-weight: 700; }
+.tk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.tk { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; display: grid; gap: 5px; }
+.tk-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tk-top b { font-size: 14px; }
+.tag { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; padding: 3px 8px; border-radius: 6px; color: #fff; }
+.tag.scale { background: var(--good); } .tag.fix { background: var(--bad); }
+.tag.optimize { background: var(--brand); } .tag.verify { background: var(--warn); } .tag.keep { background: var(--ink-2); }
+.tk p { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.tk .act { font-size: 13px; color: var(--brand); font-weight: 600; }
+.quality ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.quality li { font-size: 13px; line-height: 1.5; color: var(--ink-2); padding: 10px 12px 10px 36px; border-radius: 12px; background: var(--surface-2); position: relative; }
+.quality li::before { content: "!"; position: absolute; left: 11px; top: 10px; width: 17px; height: 17px; border-radius: 50%; background: var(--warn); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.quality li b { color: var(--ink); }
+.foot { margin-top: 26px; font-size: 12px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px; }
+
+/* ---------- tooltip ---------- */
+.tip { position: fixed; z-index: 50; pointer-events: none; opacity: 0; transition: opacity .12s; background: var(--ink); color: var(--surface); font-size: 12.5px; line-height: 1.5; padding: 8px 11px; border-radius: 10px; max-width: 260px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+.tip.on { opacity: 1; }
+.tip b { font-weight: 700; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .kpi-hero { grid-template-columns: repeat(3, 1fr); row-gap: 18px; }
+  .kpi:nth-child(3) { border-right: 0; }
+  .kpi-strip { grid-template-columns: repeat(4, 1fr); }
+  .span-4 { grid-column: span 6; } .span-5, .span-7, .span-8 { grid-column: span 12; }
+}
+@media (max-width: 640px) {
+  .page { padding: 22px 16px 32px; }
+  .kpi-hero { grid-template-columns: repeat(2, 1fr); }
+  .kpi { border-right: 0; } .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .span-4 { grid-column: span 12; } .tk-grid { grid-template-columns: 1fr; }
+  .b-row, .b-axis { grid-template-columns: 96px 1fr 84px; gap: 8px; }
+  .mini-rank { grid-template-columns: 1fr; }
+}
+@media print { .hero-controls, .tip { display: none; } .card, .kpi-hero, .chip { box-shadow: none; } body { background: #fff; } }
+
+/* ---------- combo charts / quarter / advanced insights ---------- */
+.span-6 { grid-column: span 6; }
+.chart-box.combo { height: 300px; }
+.sw.ln { width: 16px; height: 3px; border-radius: 2px; vertical-align: 3px; }
+.sw.ink { background: var(--ink); } .sw.line { background: var(--line); } .sw.line2 { background: var(--line2); }
+.legend-row { flex-wrap: wrap; }
+.warn-t { color: var(--warn); font-weight: 700; }
+.muted { color: var(--muted); }
+.kpi-strip.q { grid-template-columns: repeat(6, 1fr); margin-top: 0; }
+.qtable { min-width: 980px; }
+.qtable td:nth-child(n+2) { text-align: right; }
+.qbar { position: relative; display: inline-block; width: 90px; height: 8px; background: var(--surface-2); border-radius: 4px; margin-right: 8px; vertical-align: 1px; }
+.qbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brand); border-radius: 4px; }
+.qbar em { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.ins-grid { display: grid; grid-auto-flow: dense; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+.ins { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow); border-top: 3px solid var(--ink-2); min-width: 0; }
+.ins.bad { border-top-color: var(--bad); } .ins.good { border-top-color: var(--good); }
+.ins.wide { grid-column: span 2; }
+.ins-k { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.ins-big { font-size: 28px; font-weight: 800; letter-spacing: -.02em; color: var(--brand); margin: 4px 0 6px; }
+.ins p { font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.ins b { color: var(--ink); }
+.tier-t { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.tier-t th { font-size: 11px; color: var(--muted); text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.tier-t td { text-align: right; padding: 6px; border-bottom: 1px solid var(--grid); }
+.tier-t th:first-child, .tier-t td:first-child { text-align: left; }
+@media (max-width: 1100px) {
+  .span-6 { grid-column: span 12; } .kpi-strip.q { grid-template-columns: repeat(3, 1fr); }
+  .ins-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .kpi-strip.q { grid-template-columns: repeat(2, 1fr); }
+  .ins-grid { grid-template-columns: 1fr; } .ins.wide { grid-column: span 1; overflow-x: auto; }
+  .chart-box.combo { height: 280px; }
+}
+
+/* ---------- top toolbar + 16:9 slide summary (fixed 1600×900, scaled to fit) ---------- */
+.toolbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.toolbar .hero-sub { margin: 0; }
+.slide-wrap { position: relative; width: 100%; margin-bottom: 10px; }
+.slide {
+  position: absolute; top: 0; left: 0; width: 1600px; height: 900px; transform-origin: 0 0; overflow: hidden;
+  padding: 34px 40px 30px; border-radius: 18px; box-shadow: var(--shadow); border: 1px solid var(--border);
+  background: radial-gradient(900px 520px at 100% 100%, var(--bg-glow), transparent 70%), var(--surface);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.s-head { display: flex; justify-content: space-between; align-items: flex-end; }
+.s-eyebrow { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+.s-head h1 { font-size: 64px; line-height: .98; font-weight: 800; color: var(--brand); letter-spacing: -.035em; }
+.s-period { text-align: right; font-size: 16px; font-weight: 700; line-height: 1.5; }
+.s-period span { font-size: 13px; font-weight: 500; color: var(--muted); }
+.s-kpis { display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px 0 10px; border-bottom: 1px solid var(--border); }
+.s-kpi { text-align: center; border-right: 1px solid var(--border); padding: 0 8px; }
+.s-kpi:last-child { border-right: 0; }
+.s-kpi .l { font-size: 17px; font-weight: 700; }
+.s-kpi .v { font-size: 46px; font-weight: 800; color: var(--brand); letter-spacing: -.035em; line-height: 1.12; }
+.s-kpi .s { font-size: 13.5px; color: var(--brand-soft); font-weight: 500; }
+.s-kpi .s i { font-style: normal; font-weight: 700; margin-left: 4px; color: var(--ink-2); }
+.s-kpi .s i.up { color: var(--good); } .s-kpi .s i.down { color: var(--bad); }
+.s-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 500px; gap: 18px; }
+.s-left { display: grid; grid-template-rows: 1.05fr 1fr; gap: 12px; min-height: 0; }
+.s-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; min-height: 0; }
+.s-right { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding-left: 18px; border-left: 2px solid var(--brand-tint); }
+.s-panel { display: flex; flex-direction: column; min-height: 0; }
+.s-panel h3 { font-size: 19px; font-weight: 700; letter-spacing: -.01em; text-align: center; }
+.s-legend { display: flex; justify-content: center; gap: 14px; font-size: 12px; color: var(--ink-2); margin: 3px 0 2px; flex-wrap: wrap; }
+.s-chart { position: relative; flex: 1; min-height: 0; }
+.s-fn #s-funnel { display: grid; gap: 5px; margin-top: 6px; }
+.sf-row { display: grid; grid-template-columns: 100px 1fr 196px; align-items: center; gap: 10px; font-size: 13px; }
+.sf-l { text-align: right; color: var(--ink-2); font-weight: 600; }
+.sf-bar { display: block; height: 20px; background: var(--brand); border-radius: 0 4px 4px 0; }
+.sf-v { font-weight: 800; font-size: 13px; white-space: nowrap; }
+.sf-v em { font-style: normal; font-weight: 500; color: var(--muted); margin-left: 6px; font-size: 11.5px; }
+.s-tk { flex: 1; }
+.s-tk h3 { margin-bottom: 6px; }
+#s-takeaway { display: grid; gap: 7px; align-content: start; }
+.st { padding: 7px 11px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.st-top { display: flex; align-items: center; gap: 7px; }
+.st-n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.st-top .tag { font-size: 9.5px; padding: 2px 6px; }
+.st-top b { font-size: 13.6px; line-height: 1.3; color: var(--ink); letter-spacing: -.005em; }
+.st p { font-size: 12px; line-height: 1.42; color: var(--ink-2); margin: 4px 0 3px; }
+.st-act { font-size: 12px; font-weight: 700; color: var(--brand); line-height: 1.35; }
+.sf-v i { font-style: normal; font-weight: 700; font-size: 11px; margin-left: 2px; }
+.sf-v i.up { color: var(--good); } .sf-v i.down { color: var(--bad); }
+.tag.target { background: var(--brand); } .tag.budget { background: var(--bad); } .tag.funnel { background: var(--good); }
+/* "#slide" mode: only the slide at native size — used for PNG export */
+body.slide-only { background: var(--surface); }
+body.slide-only .page { padding: 0; max-width: none; }
+body.slide-only .page > :not(#slide-wrap) { display: none; }
+body.slide-only .slide-wrap { width: 1600px; height: 900px; margin: 0; }
+body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <p class="hero-sub" id="hero-sub"></p>
+      <div class="hero-controls">
+        <label class="month-pick">
+          <span>Report month</span>
+          <select id="month-select" aria-label="Select report month"></select>
+        </label>
+        <button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle light/dark theme">◐</button>
+      </div>
+    </header>
+
+    <section class="slide-wrap" id="slide-wrap" aria-label="Summary slide">
+      <div class="slide" id="slide">
+        <header class="s-head">
+          <div><div class="s-eyebrow" id="s-eyebrow">Channel Marketing</div><h1>Digital Performance</h1></div>
+          <div class="s-period" id="s-period"></div>
+        </header>
+        <div class="s-kpis" id="s-kpis"></div>
+        <div class="s-body">
+          <div class="s-left">
+            <div class="s-panel s-a">
+              <h3>Monthly Revenue vs Adjusted Target by Store</h3>
+              <div class="s-legend" id="s-t-legend"></div>
+              <div class="s-chart"><canvas id="s-c-target"></canvas></div>
+            </div>
+            <div class="s-row">
+              <div class="s-panel">
+                <h3>Spent & ROAS by Store</h3>
+                <div class="s-legend"><span><i class="sw s1"></i>Ad spend (FB)</span><span><i class="sw ln line"></i>ROAS</span></div>
+                <div class="s-chart"><canvas id="s-c-spend"></canvas></div>
+              </div>
+              <div class="s-panel">
+                <h3>Messages & Cost/Message by Store</h3>
+                <div class="s-legend"><span><i class="sw s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div>
+                <div class="s-chart"><canvas id="s-c-msg"></canvas></div>
+              </div>
+            </div>
+          </div>
+          <div class="s-right">
+            <div class="s-panel s-fn"><h3>Message Funnel</h3><div id="s-funnel"></div></div>
+            <div class="s-panel s-tk"><h3>Key Takeaway</h3><div id="s-takeaway"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-title detail-title">
+      <h2>Details</h2>
+      <p>Full monthly figures · hover or tap a chart to see values</p>
+    </section>
+    <section class="kpi-hero" id="kpi-hero" aria-label="Main KPIs"></section>
+    <section class="kpi-strip" id="kpi-strip" aria-label="Secondary KPIs"></section>
+    <section id="alert-slot"></section>
+
+    <section class="grid">
+      <article class="card span-7">
+        <div class="card-head">
+          <h2>Adjusted Target Achievement by Store</h2>
+          <p>Month revenue ÷ adjusted target (quarter target − earlier months) · black tick = 100%</p>
+        </div>
+        <div id="bullet" class="bullet"></div>
+      </article>
+      <article class="card span-5">
+        <div class="card-head">
+          <h2>Message Funnel</h2>
+          <p>Messages → 2-way → 5-way → purchase</p>
+        </div>
+        <div id="funnel" class="funnel"></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2 id="q-title">Adjusted target</h2>
+      <p id="q-note"></p>
+    </section>
+    <section class="kpi-strip q" id="q-kpis"></section>
+    <section class="grid">
+      <article class="card span-12">
+        <div class="card-head"><h2>Monthly Revenue vs Adjusted Target</h2><p>Dark bar = met · light bar = below · black tick = adjusted target · grey tick = monthly plan</p></div>
+        <div class="legend-row" id="q-legend"></div>
+        <div class="chart-box tall"><canvas id="c-quarter"></canvas></div>
+      </article>
+      <article class="card span-12">
+        <div class="card-head"><h2>Target Scorecard</h2><p>Monthly plan vs adjusted target · gap to adjusted target</p></div>
+        <div class="table-wrap"><table class="matrix qtable" id="q-table"></table></div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-12">
+        <div class="card-head row">
+          <div>
+            <h2>Store Performance Table</h2>
+            <p>Click a column header to sort · bar = relative size within the column</p>
+          </div>
+          <div class="legend-inline"><span class="pill tier">MD</span><span class="pill tier pd">PD</span><span class="pill tier ka">KA</span></div>
+        </div>
+        <div class="table-wrap"><table class="matrix" id="matrix"></table></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2>Performance by Store</h2>
+      <p>Bars = left axis · lines = right axis · sorted by ad spend</p>
+    </section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>Spent & ROAS by Store</h3><p>FB ad spend and ROAS per store</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-spend-roas"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Ad Cost vs Cost/Message vs Cost/Comment</h3><p>Cost per message / comment · “↑” = off scale</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>FB Ad Cost</span><span><i class="sw ln line"></i>Cost/Message</span><span><i class="sw ln line2"></i>Cost/Comment</span></div><div class="chart-box combo"><canvas id="c-cost-msg-cmt"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Sale Units & AOV</h3><p>Units sold and average order value</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Sale units</span><span><i class="sw ln line"></i>AOV</span></div><div class="chart-box combo"><canvas id="c-aov-units"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Paid vs Organic Contacts</h3><p>Contact sources and % organic</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Paid</span><span><i class="sw  s2"></i>Organic</span><span><i class="sw ln line"></i>% Organic</span></div><div class="chart-box combo"><canvas id="c-contacts"></canvas></div></article>
+    </section>
+
+    <section class="section-title">
+      <h2>Month-over-Month Trends</h2>
+      <p id="trend-note"></p>
+    </section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. CIR%</h3><p>Revenue and % CIR by month</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln line"></i>% CIR</span></div><div class="chart-box combo"><canvas id="c-rev-cir"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Message vs. Cost/Message</h3><p>FB messages and cost per message</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div><div class="chart-box combo"><canvas id="c-msg-cpm"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Ad Spend vs. ROAS</h3><p>Ad spend and ROAS</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-ad-roas"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. Target</h3><p>Bar label = % of monthly plan</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln ink"></i>Target</span></div><div class="chart-box combo"><canvas id="c-rev-target"></canvas></div></article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-7">
+        <div class="card-head">
+          <h2>Efficiency Matrix: Cost/Message × Target</h2>
+          <p>Bubble size = ad spend · dividers = overall Cost/Message and 100% of adjusted target</p>
+        </div>
+        <div class="chart-box tall"><canvas id="c-quad"></canvas></div>
+      </article>
+      <article class="card span-5">
+        <div class="card-head">
+          <h2>FB Comments & Followers</h2>
+          <p>Fanpage engagement by store</p>
+        </div>
+        <div class="legend-row">
+          <span><i class="sw s1"></i>Comments</span><span><i class="sw s2"></i>New followers</span>
+        </div>
+        <div class="chart-box tall"><canvas id="c-eng"></canvas></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2>Deeper Insights</h2>
+      <p>Computed from the selected month</p>
+    </section>
+    <section class="ins-grid" id="adv-insights"></section>
+
+    <section class="grid">
+      <article class="card span-8 takeaway">
+        <div class="card-head"><h2>Key Takeaway & Action</h2><p id="takeaway-sub"></p></div>
+        <div id="takeaways"></div>
+      </article>
+      <article class="card span-4 quality">
+        <div class="card-head"><h2>Data Quality</h2><p>Check these before closing the numbers</p></div>
+        <ul id="quality"></ul>
+      </article>
+    </section>
+
+    <footer class="foot" id="foot"></footer>
+  </div>
+  <div class="tip" id="tip" role="tooltip"></div>
+
+  <script>
+const RAW_ROWS = [{"month": "2026.09", "shop": "01. BigMi", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 2262080000.0, "t_units": 250.0, "units": 225.0, "units_o2o": 12.0, "contacts": 2004.0, "contacts_org": 95.0, "contacts_paid": 1909.0, "budget": 40000000.0, "ad": 34282026.0, "msg": 1381.0, "msg2": 1143.0, "msg5": 193.0, "msg_org": 109.0, "msg_cmt": 201.0, "purchase_msg": 12.0, "cmt": 236.0, "fol": 67.0, "aov": 10053689.0}, {"month": "2026.09", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 3500000000.0, "revenue": 16923510000.0, "t_units": 233.0, "units": 1780.0, "units_o2o": null, "contacts": 1649.0, "contacts_org": 28.0, "contacts_paid": 1621.0, "budget": 35000000.0, "ad": 31543669.0, "msg": 1332.0, "msg2": 1185.0, "msg5": 159.0, "msg_org": 28.0, "msg_cmt": 212.0, "purchase_msg": 26.0, "cmt": 212.0, "fol": 168.0, "aov": 9507590.0}, {"month": "2026.09", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 3500000000.0, "revenue": 2263100000.0, "t_units": 233.0, "units": 179.0, "units_o2o": null, "contacts": 827.0, "contacts_org": 6.0, "contacts_paid": 821.0, "budget": 35000000.0, "ad": 20869664.0, "msg": 841.0, "msg2": 748.0, "msg5": 101.0, "msg_org": 6.0, "msg_cmt": 78.0, "purchase_msg": 17.0, "cmt": 78.0, "fol": 50.0, "aov": 12643017.0}, {"month": "2026.09", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 5000000000.0, "revenue": 4885270000.0, "t_units": 333.0, "units": 538.0, "units_o2o": null, "contacts": 956.0, "contacts_org": 30.0, "contacts_paid": 926.0, "budget": 50000000.0, "ad": 10547500.0, "msg": 866.0, "msg2": 771.0, "msg5": 104.0, "msg_org": 30.0, "msg_cmt": 59.0, "purchase_msg": 14.0, "cmt": 59.0, "fol": 23.0, "aov": 9080428.0}, {"month": "2026.09", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 550000000.0, "revenue": 565530000.0, "t_units": 37.0, "units": 44.0, "units_o2o": null, "contacts": 475.0, "contacts_org": 7.0, "contacts_paid": 468.0, "budget": 5500000.0, "ad": 8457854.0, "msg": 480.0, "msg2": 427.0, "msg5": 58.0, "msg_org": 7.0, "msg_cmt": 37.0, "purchase_msg": 4.0, "cmt": 37.0, "fol": 30.0, "aov": 12852955.0}, {"month": "2026.09", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1500000000.0, "revenue": 1577870000.0, "t_units": 107.0, "units": 153.0, "units_o2o": 61.0, "contacts": 1183.0, "contacts_org": 37.0, "contacts_paid": 1146.0, "budget": 15000000.0, "ad": 15733245.0, "msg": 1220.0, "msg2": 914.0, "msg5": 209.0, "msg_org": 37.0, "msg_cmt": 151.0, "purchase_msg": 30.0, "cmt": 151.0, "fol": 44.0, "aov": 10312876.0}, {"month": "2026.09", "shop": "14. CPS", "tier": "KA", "has_source": true, "target": 3500000000.0, "revenue": 790622200.0, "t_units": 350.0, "units": 90.0, "units_o2o": 156.0, "contacts": 363.0, "contacts_org": 139.0, "contacts_paid": 224.0, "budget": 0.0, "ad": 21553721.0, "msg": 446.0, "msg2": 248.0, "msg5": 85.0, "msg_org": 139.0, "msg_cmt": 4.0, "purchase_msg": null, "cmt": 4.0, "fol": null, "aov": 8784691.0}, {"month": "2026.09", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 2500000000.0, "revenue": 1800661000.0, "t_units": 250.0, "units": 175.0, "units_o2o": 146.0, "contacts": 1219.0, "contacts_org": 20.0, "contacts_paid": 1199.0, "budget": 25000000.0, "ad": 21909547.0, "msg": 1371.0, "msg2": 959.0, "msg5": 214.0, "msg_org": 20.0, "msg_cmt": 184.0, "purchase_msg": 12.0, "cmt": 184.0, "fol": 83.0, "aov": 10289491.0}, {"month": "2026.09", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1800000000.0, "revenue": 2414894000.0, "t_units": 225.0, "units": 373.0, "units_o2o": 99.0, "contacts": 1314.0, "contacts_org": 18.0, "contacts_paid": 1296.0, "budget": 18000000.0, "ad": 21442881.0, "msg": 1425.0, "msg2": 1140.0, "msg5": 213.0, "msg_org": 18.0, "msg_cmt": 270.0, "purchase_msg": 33.0, "cmt": 270.0, "fol": 45.0, "aov": 6474247.0}, {"month": "2026.09", "shop": "10. Giang Chi SmartHome", "tier": "PD", "has_source": false, "target": 200000000.0, "revenue": 55990000.0, "t_units": 28.0, "units": 7.0, "units_o2o": null, "contacts": 115.0, "contacts_org": 2.0, "contacts_paid": 113.0, "budget": 3000000.0, "ad": 3165851.0, "msg": 114.0, "msg2": 101.0, "msg5": 14.0, "msg_org": 2.0, "msg_cmt": 11.0, "purchase_msg": 0.0, "cmt": 11.0, "fol": 5.0, "aov": 7998571.0}, {"month": "2026.09", "shop": "11. Domotek", "tier": "PD", "has_source": false, "target": 700000000.0, "revenue": 379350000.0, "t_units": 35.0, "units": 33.0, "units_o2o": null, "contacts": 581.0, "contacts_org": 6.0, "contacts_paid": 575.0, "budget": 8000000.0, "ad": 7070367.0, "msg": 403.0, "msg2": 362.0, "msg5": 48.0, "msg_org": 6.0, "msg_cmt": 124.0, "purchase_msg": 5.0, "cmt": 124.0, "fol": 21.0, "aov": 11495455.0}, {"month": "2026.08", "shop": "01. BigMi", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 3325510000.0, "t_units": 250.0, "units": 321.0, "units_o2o": 11.0, "contacts": 3171.0, "contacts_org": 87.0, "contacts_paid": 3084.0, "budget": 40000000.0, "ad": 49328255.0, "msg": 2031.0, "msg2": 1549.0, "msg5": 306.0, "msg_org": 355.0, "msg_cmt": 54.0, "purchase_msg": 11.0, "cmt": 497.0, "fol": 95.0, "aov": 10359844.0}, {"month": "2026.08", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 3000000000.0, "revenue": 3198500000.0, "t_units": 200.0, "units": 304.0, "units_o2o": null, "contacts": 1800.0, "contacts_org": 18.0, "contacts_paid": 1782.0, "budget": 30000000.0, "ad": 33017203.0, "msg": 1440.0, "msg2": 1272.0, "msg5": 304.0, "msg_org": 18.0, "msg_cmt": 279.0, "purchase_msg": 30.0, "cmt": 279.0, "fol": 116.0, "aov": 10521382.0}, {"month": "2026.08", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 2500000000.0, "revenue": 2526130000.0, "t_units": 167.0, "units": 204.0, "units_o2o": null, "contacts": 1012.0, "contacts_org": 20.0, "contacts_paid": 992.0, "budget": 25000000.0, "ad": 24579986.0, "msg": 1006.0, "msg2": 888.0, "msg5": 212.0, "msg_org": 20.0, "msg_cmt": 141.0, "purchase_msg": 18.0, "cmt": 141.0, "fol": 168.0, "aov": 12382990.0}, {"month": "2026.08", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 4746850000.0, "t_units": 267.0, "units": 528.0, "units_o2o": null, "contacts": 1227.0, "contacts_org": 29.0, "contacts_paid": 1198.0, "budget": 40000000.0, "ad": 11886133.0, "msg": 1448.0, "msg2": 1279.0, "msg5": 306.0, "msg_org": 28.0, "msg_cmt": 85.0, "purchase_msg": 8.0, "cmt": 85.0, "fol": 23.0, "aov": 8990246.0}, {"month": "2026.08", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 550000000.0, "revenue": 568130000.0, "t_units": 37.0, "units": 49.0, "units_o2o": null, "contacts": 379.0, "contacts_org": 7.0, "contacts_paid": 372.0, "budget": 5500000.0, "ad": 7775152.0, "msg": 370.0, "msg2": 1628.0, "msg5": 180.0, "msg_org": 7.0, "msg_cmt": 50.0, "purchase_msg": 2.0, "cmt": 50.0, "fol": 20.0, "aov": 11594490.0}, {"month": "2026.08", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1500000000.0, "revenue": 1975610000.0, "t_units": 107.0, "units": 190.0, "units_o2o": null, "contacts": 872.0, "contacts_org": 28.0, "contacts_paid": 844.0, "budget": 15000000.0, "ad": 28644961.0, "msg": 1027.0, "msg2": 847.0, "msg5": 208.0, "msg_org": 47.0, "msg_cmt": 68.0, "purchase_msg": 14.0, "cmt": 68.0, "fol": 43.0, "aov": 10397947.0}, {"month": "2026.08", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 2200000000.0, "revenue": 2818290000.0, "t_units": 220.0, "units": 277.0, "units_o2o": null, "contacts": 703.0, "contacts_org": 19.0, "contacts_paid": 684.0, "budget": 22000000.0, "ad": 23381615.0, "msg": 1519.0, "msg2": 1264.0, "msg5": 311.0, "msg_org": 37.0, "msg_cmt": 427.0, "purchase_msg": 5.0, "cmt": 427.0, "fol": 53.0, "aov": 10174332.0}, {"month": "2026.08", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1500000000.0, "revenue": 2437860000.0, "t_units": 188.0, "units": 271.0, "units_o2o": null, "contacts": 642.0, "contacts_org": 5.0, "contacts_paid": 637.0, "budget": 15000000.0, "ad": 20901431.0, "msg": 1276.0, "msg2": 1072.0, "msg5": 265.0, "msg_org": 19.0, "msg_cmt": 391.0, "purchase_msg": 3.0, "cmt": 391.0, "fol": 29.0, "aov": 8995793.0}, {"month": "2026.08", "shop": "09. Minh Châu SmartHome", "tier": "PD", "has_source": false, "target": 650000000.0, "revenue": 834675000.0, "t_units": 0.0, "units": 50.0, "units_o2o": null, "contacts": 142.0, "contacts_org": 71.0, "contacts_paid": 71.0, "budget": 8000000.0, "ad": 10154482.0, "msg": 868.0, "msg2": null, "msg5": null, "msg_org": null, "msg_cmt": 58.0, "purchase_msg": null, "cmt": 58.0, "fol": 19.0, "aov": 16693500.0}, {"month": "2026.08", "shop": "10. Giang Chi SmartHome", "tier": "PD", "has_source": false, "target": 150000000.0, "revenue": 80430000.0, "t_units": 17.0, "units": 9.0, "units_o2o": null, "contacts": 105.0, "contacts_org": 2.0, "contacts_paid": 103.0, "budget": 2500000.0, "ad": 2476616.0, "msg": 93.0, "msg2": 54.0, "msg5": 31.0, "msg_org": 2.0, "msg_cmt": 31.0, "purchase_msg": 1.0, "cmt": 31.0, "fol": 13.0, "aov": 8936667.0}, {"month": "2026.08", "shop": "11. Domotek", "tier": "PD", "has_source": false, "target": 500000000.0, "revenue": 525600000.0, "t_units": 35.0, "units": 46.0, "units_o2o": null, "contacts": 513.0, "contacts_org": 9.0, "contacts_paid": 504.0, "budget": 4000000.0, "ad": 3521912.0, "msg": 157.0, "msg2": 68.0, "msg5": 41.0, "msg_org": 9.0, "msg_cmt": 23.0, "purchase_msg": 2.0, "cmt": 23.0, "fol": 19.0, "aov": 11426087.0}, {"month": "2026.08", "shop": "12. Viettel Store", "tier": "KA", "has_source": false, "target": 1000000000.0, "revenue": 9670000.0, "t_units": 100.0, "units": 1.0, "units_o2o": null, "contacts": 78.0, "contacts_org": 39.0, "contacts_paid": 39.0, "budget": 0.0, "ad": 2835465.0, "msg": 165.0, "msg2": null, "msg5": null, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": 39.0, "fol": null, "aov": 9670000.0}, {"month": "2026.08", "shop": "14. CPS", "tier": "KA", "has_source": false, "target": 2500000000.0, "revenue": 2187905800.0, "t_units": 250.0, "units": 225.0, "units_o2o": null, "contacts": 143.0, "contacts_org": 143.0, "contacts_paid": 0.0, "budget": 0.0, "ad": 0.0, "msg": 0.0, "msg2": 0.0, "msg5": 0.0, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": 0.0, "fol": 0.0, "aov": 9724026.0}, {"month": "2026.07", "shop": "01. BigMi", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 2165490000.0, "t_units": 250.0, "units": 197.0, "units_o2o": 6.0, "contacts": 3018.0, "contacts_org": 70.0, "contacts_paid": 2948.0, "budget": 40000000.0, "ad": 51195098.0, "msg": 1752.0, "msg2": 1252.0, "msg5": 219.0, "msg_org": 448.0, "msg_cmt": 108.0, "purchase_msg": 4.0, "cmt": 578.0, "fol": 67.0, "aov": 10992335.0}, {"month": "2026.07", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 2500000000.0, "revenue": 3280740000.0, "t_units": 167.0, "units": 302.0, "units_o2o": null, "contacts": 1995.0, "contacts_org": 39.0, "contacts_paid": 1956.0, "budget": 25000000.0, "ad": 41253780.0, "msg": 1572.0, "msg2": 1388.0, "msg5": 332.0, "msg_org": 39.0, "msg_cmt": 327.0, "purchase_msg": 41.0, "cmt": 327.0, "fol": null, "aov": 10863377.0}, {"month": "2026.07", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 2000000000.0, "revenue": 1978040000.0, "t_units": 133.0, "units": 147.0, "units_o2o": null, "contacts": 1275.0, "contacts_org": 16.0, "contacts_paid": 1259.0, "budget": 20000000.0, "ad": 45280191.0, "msg": 1756.0, "msg2": 1551.0, "msg5": 370.0, "msg_org": 16.0, "msg_cmt": 291.0, "purchase_msg": 39.0, "cmt": 291.0, "fol": null, "aov": 13456054.0}, {"month": "2026.07", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 4912570000.0, "t_units": 267.0, "units": 489.0, "units_o2o": null, "contacts": 844.0, "contacts_org": 33.0, "contacts_paid": 811.0, "budget": 40000000.0, "ad": 16577065.0, "msg": 741.0, "msg2": 654.0, "msg5": 156.0, "msg_org": 33.0, "msg_cmt": 91.0, "purchase_msg": 16.0, "cmt": 91.0, "fol": null, "aov": 10046155.0}, {"month": "2026.07", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 400000000.0, "revenue": 761000000.0, "t_units": 27.0, "units": 68.0, "units_o2o": null, "contacts": 468.0, "contacts_org": 11.0, "contacts_paid": 457.0, "budget": 4000000.0, "ad": 9694128.0, "msg": 496.0, "msg2": 438.0, "msg5": 105.0, "msg_org": 11.0, "msg_cmt": 55.0, "purchase_msg": 4.0, "cmt": 55.0, "fol": null, "aov": 11191176.0}, {"month": "2026.07", "shop": "10. Giang Chi SmartHome", "tier": "PD", "has_source": false, "target": 150000000.0, "revenue": 113850000.0, "t_units": 17.0, "units": 15.0, "units_o2o": null, "contacts": 240.0, "contacts_org": 2.0, "contacts_paid": 238.0, "budget": 3500000.0, "ad": 4122206.0, "msg": 243.0, "msg2": 187.0, "msg5": 92.0, "msg_org": 2.0, "msg_cmt": null, "purchase_msg": null, "cmt": 47.0, "fol": 75.0, "aov": 7590000.0}, {"month": "2026.07", "shop": "11. Domotek", "tier": "PD", "has_source": false, "target": 300000000.0, "revenue": 544680000.0, "t_units": 35.0, "units": 50.0, "units_o2o": null, "contacts": 736.0, "contacts_org": 12.0, "contacts_paid": 724.0, "budget": 4000000.0, "ad": 4168247.0, "msg": 160.0, "msg2": 113.0, "msg5": 64.0, "msg_org": 12.0, "msg_cmt": null, "purchase_msg": 3.0, "cmt": 38.0, "fol": 57.0, "aov": 10893600.0}, {"month": "2026.07", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 1839470000.0, "t_units": 71.0, "units": 163.0, "units_o2o": null, "contacts": 762.0, "contacts_org": 28.0, "contacts_paid": 734.0, "budget": 10000000.0, "ad": 41149984.0, "msg": 1617.0, "msg2": 1334.0, "msg5": 328.0, "msg_org": 45.0, "msg_cmt": 520.0, "purchase_msg": 60.0, "cmt": 520.0, "fol": 111.0, "aov": 11285092.0}, {"month": "2026.07", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1300000000.0, "revenue": 1471100000.0, "t_units": 162.0, "units": 200.0, "units_o2o": null, "contacts": 657.0, "contacts_org": 19.0, "contacts_paid": 638.0, "budget": 13000000.0, "ad": 20458906.0, "msg": 1079.0, "msg2": 906.0, "msg5": 224.0, "msg_org": 17.0, "msg_cmt": 328.0, "purchase_msg": null, "cmt": 328.0, "fol": 32.0, "aov": 7355500.0}, {"month": "2026.07", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 2000000000.0, "revenue": 2112410000.0, "t_units": 200.0, "units": 223.0, "units_o2o": null, "contacts": 286.0, "contacts_org": 5.0, "contacts_paid": 281.0, "budget": 20000000.0, "ad": 28651302.0, "msg": 1870.0, "msg2": 1556.0, "msg5": 383.0, "msg_org": 34.0, "msg_cmt": 400.0, "purchase_msg": null, "cmt": 400.0, "fol": 77.0, "aov": 9472691.0}, {"month": "2026.07", "shop": "12. Viettel Store", "tier": "KA", "has_source": false, "target": 1000000000.0, "revenue": 388770000.0, "t_units": 0.0, "units": 39.0, "units_o2o": null, "contacts": 1744.0, "contacts_org": 1109.0, "contacts_paid": 635.0, "budget": 0.0, "ad": 2047000.0, "msg": 92.0, "msg2": null, "msg5": null, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": null, "fol": null, "aov": 9968462.0}, {"month": "2026.07", "shop": "14. CPS", "tier": "KA", "has_source": false, "target": 970000000.0, "revenue": null, "t_units": 97.0, "units": null, "units_o2o": null, "contacts": 115.0, "contacts_org": 115.0, "contacts_paid": 0.0, "budget": 0.0, "ad": null, "msg": null, "msg2": null, "msg5": null, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": null, "fol": null, "aov": null}, {"month": "2026.06", "shop": "01. BigMi", "tier": "MD", "has_source": true, "target": 1000000000.0, "revenue": 750170000.0, "t_units": 62.0, "units": 73.0, "units_o2o": 0.0, "contacts": 2910.0, "contacts_org": 75.0, "contacts_paid": 2835.0, "budget": 10000000.0, "ad": 47596628.0, "msg": 1381.0, "msg2": 1096.0, "msg5": 196.0, "msg_org": 290.0, "msg_cmt": 41.0, "purchase_msg": 4.0, "cmt": 309.0, "fol": 44.0, "aov": 10276301.0}, {"month": "2026.06", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 3500000000.0, "revenue": 4087480000.0, "t_units": 233.0, "units": 412.0, "units_o2o": null, "contacts": 1667.0, "contacts_org": 19.0, "contacts_paid": 1648.0, "budget": 35000000.0, "ad": 19366339.0, "msg": 1189.0, "msg2": 1050.0, "msg5": 251.0, "msg_org": 18.0, "msg_cmt": 180.0, "purchase_msg": 23.0, "cmt": 180.0, "fol": 237.0, "aov": 9921068.0}, {"month": "2026.06", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 2000000000.0, "revenue": 2741870000.0, "t_units": 133.0, "units": 236.0, "units_o2o": null, "contacts": 715.0, "contacts_org": 9.0, "contacts_paid": 706.0, "budget": 20000000.0, "ad": 19518355.0, "msg": 902.0, "msg2": 796.0, "msg5": 190.0, "msg_org": 8.0, "msg_cmt": 123.0, "purchase_msg": 26.0, "cmt": 123.0, "fol": 183.0, "aov": 11618093.0}, {"month": "2026.06", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 4300900000.0, "t_units": 267.0, "units": 462.0, "units_o2o": null, "contacts": 517.0, "contacts_org": 24.0, "contacts_paid": 493.0, "budget": 40000000.0, "ad": 10952144.0, "msg": 517.0, "msg2": 457.0, "msg5": 109.0, "msg_org": 24.0, "msg_cmt": 71.0, "purchase_msg": 6.0, "cmt": 71.0, "fol": 5.0, "aov": 9309307.0}, {"month": "2026.06", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 500000000.0, "revenue": 567670000.0, "t_units": 33.0, "units": 56.0, "units_o2o": null, "contacts": 533.0, "contacts_org": 11.0, "contacts_paid": 522.0, "budget": 5000000.0, "ad": 8967161.0, "msg": 540.0, "msg2": 477.0, "msg5": 114.0, "msg_org": 10.0, "msg_cmt": 76.0, "purchase_msg": 3.0, "cmt": 76.0, "fol": 31.0, "aov": 10136964.0}, {"month": "2026.06", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 670890000.0, "t_units": 71.0, "units": 73.0, "units_o2o": null, "contacts": 329.0, "contacts_org": 20.0, "contacts_paid": 309.0, "budget": 10000000.0, "ad": 20049527.0, "msg": 463.0, "msg2": null, "msg5": null, "msg_org": 20.0, "msg_cmt": 97.0, "purchase_msg": 21.0, "cmt": 97.0, "fol": 20.0, "aov": 9190274.0}, {"month": "2026.06", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 2183870000.0, "t_units": 100.0, "units": 209.0, "units_o2o": null, "contacts": 520.0, "contacts_org": 18.0, "contacts_paid": 502.0, "budget": 10000000.0, "ad": 21357105.0, "msg": 1102.0, "msg2": null, "msg5": null, "msg_org": 23.0, "msg_cmt": 234.0, "purchase_msg": null, "cmt": 234.0, "fol": 73.0, "aov": 10449139.0}, {"month": "2026.06", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 2174650000.0, "t_units": 100.0, "units": 261.0, "units_o2o": null, "contacts": 216.0, "contacts_org": 7.0, "contacts_paid": 209.0, "budget": 10000000.0, "ad": 17280472.0, "msg": 904.0, "msg2": null, "msg5": null, "msg_org": 18.0, "msg_cmt": 257.0, "purchase_msg": null, "cmt": 257.0, "fol": 36.0, "aov": 8331992.0}, {"month": "2026.06", "shop": "10. Giang Chi SmartHome", "tier": "PD", "has_source": false, "target": 150000000.0, "revenue": 86200000.0, "t_units": 17.0, "units": 8.0, "units_o2o": null, "contacts": 398.0, "contacts_org": null, "contacts_paid": 398.0, "budget": 3500000.0, "ad": 4400000.0, "msg": 395.0, "msg2": 287.0, "msg5": 114.0, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": 35.0, "fol": 21.0, "aov": 10775000.0}, {"month": "2026.06", "shop": "11. Domotek", "tier": "PD", "has_source": false, "target": 300000000.0, "revenue": 234400000.0, "t_units": 35.0, "units": 24.0, "units_o2o": null, "contacts": 1341.0, "contacts_org": 14.0, "contacts_paid": 1327.0, "budget": 4000000.0, "ad": 3600000.0, "msg": 310.0, "msg2": 243.0, "msg5": 102.0, "msg_org": 14.0, "msg_cmt": null, "purchase_msg": 3.0, "cmt": 28.0, "fol": 28.0, "aov": 9766667.0}, {"month": "2026.06", "shop": "14. CPS", "tier": "KA", "has_source": false, "target": 970000000.0, "revenue": 521401400.0, "t_units": 97.0, "units": 109.0, "units_o2o": null, "contacts": 112.0, "contacts_org": 112.0, "contacts_paid": 0.0, "budget": 0.0, "ad": null, "msg": null, "msg2": null, "msg5": null, "msg_org": null, "msg_cmt": null, "purchase_msg": null, "cmt": null, "fol": null, "aov": 4783499.0}, {"month": "2026.05", "shop": "01. BigMi", "tier": "MD", "has_source": false, "target": 2000000000.0, "revenue": 1831700000.0, "t_units": 125.0, "units": 148.0, "units_o2o": 4.0, "contacts": 296.0, "contacts_org": 148.0, "contacts_paid": 148.0, "budget": 20000000.0, "ad": 36290613.0, "msg": 1817.0, "msg2": 1655.0, "msg5": 176.0, "msg_org": 35.0, "msg_cmt": 111.0, "purchase_msg": 4.0, "cmt": 208.0, "fol": 40.0, "aov": 12376351.0}, {"month": "2026.05", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 2500000000.0, "revenue": 2741960000.0, "t_units": 167.0, "units": 280.0, "units_o2o": null, "contacts": 1303.0, "contacts_org": 13.0, "contacts_paid": 1290.0, "budget": 25000000.0, "ad": 19038389.0, "msg": 914.0, "msg2": 807.0, "msg5": 193.0, "msg_org": 13.0, "msg_cmt": 135.0, "purchase_msg": 19.0, "cmt": 135.0, "fol": 143.0, "aov": 9792714.0}, {"month": "2026.05", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 2000000000.0, "revenue": 2846860000.0, "t_units": 133.0, "units": 247.0, "units_o2o": null, "contacts": 556.0, "contacts_org": 11.0, "contacts_paid": 545.0, "budget": 20000000.0, "ad": 15486699.0, "msg": 942.0, "msg2": 832.0, "msg5": 199.0, "msg_org": 11.0, "msg_cmt": 113.0, "purchase_msg": 27.0, "cmt": 113.0, "fol": 119.0, "aov": 11525749.0}, {"month": "2026.05", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 3000000000.0, "revenue": 3468050000.0, "t_units": 200.0, "units": 357.0, "units_o2o": null, "contacts": 512.0, "contacts_org": 34.0, "contacts_paid": 478.0, "budget": 30000000.0, "ad": 9514046.0, "msg": 488.0, "msg2": 431.0, "msg5": 103.0, "msg_org": 33.0, "msg_cmt": 58.0, "purchase_msg": 9.0, "cmt": 58.0, "fol": 6.0, "aov": 9714426.0}, {"month": "2026.05", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 800000000.0, "revenue": 929340000.0, "t_units": 53.0, "units": 74.0, "units_o2o": null, "contacts": 502.0, "contacts_org": 16.0, "contacts_paid": 486.0, "budget": 8000000.0, "ad": 8081350.0, "msg": 469.0, "msg2": 414.0, "msg5": 99.0, "msg_org": 17.0, "msg_cmt": 60.0, "purchase_msg": 5.0, "cmt": 60.0, "fol": 29.0, "aov": 12558649.0}, {"month": "2026.05", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 967510000.0, "t_units": 71.0, "units": 93.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 16047868.0, "msg": 521.0, "msg2": null, "msg5": null, "msg_org": 32.0, "msg_cmt": 90.0, "purchase_msg": 24.0, "cmt": 90.0, "fol": 21.0, "aov": 10403333.0}, {"month": "2026.05", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 3564800000.0, "t_units": 100.0, "units": 371.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 8254326.0, "msg": 400.0, "msg2": null, "msg5": null, "msg_org": 18.0, "msg_cmt": 42.0, "purchase_msg": null, "cmt": 42.0, "fol": 9.0, "aov": 9608625.0}, {"month": "2026.05", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 1496530000.0, "t_units": 100.0, "units": 169.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 6344394.0, "msg": 170.0, "msg2": null, "msg5": null, "msg_org": 6.0, "msg_cmt": 28.0, "purchase_msg": null, "cmt": 58.0, "fol": 4.0, "aov": 8855207.0}, {"month": "2026.04", "shop": "01. BigMi", "tier": "MD", "has_source": false, "target": 5000000000.0, "revenue": 5081120000.0, "t_units": 312.0, "units": 517.0, "units_o2o": 3.0, "contacts": 1034.0, "contacts_org": 517.0, "contacts_paid": 517.0, "budget": 50000000.0, "ad": 27363336.0, "msg": 1559.0, "msg2": 1395.0, "msg5": 213.0, "msg_org": 109.0, "msg_cmt": 36.0, "purchase_msg": 3.0, "cmt": 104.0, "fol": 22.0, "aov": 9828085.0}, {"month": "2026.04", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 2000000000.0, "revenue": 2251750000.0, "t_units": 133.0, "units": 201.0, "units_o2o": null, "contacts": 1128.0, "contacts_org": 10.0, "contacts_paid": 1118.0, "budget": 20000000.0, "ad": 20718143.0, "msg": 1069.0, "msg2": 944.0, "msg5": 226.0, "msg_org": 10.0, "msg_cmt": 129.0, "purchase_msg": 16.0, "cmt": 129.0, "fol": 62.0, "aov": 11202736.0}, {"month": "2026.04", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 3500000000.0, "revenue": 3998890000.0, "t_units": 233.0, "units": 334.0, "units_o2o": null, "contacts": 227.0, "contacts_org": 17.0, "contacts_paid": 210.0, "budget": 35000000.0, "ad": 17523652.0, "msg": 816.0, "msg2": 720.0, "msg5": 172.0, "msg_org": 16.0, "msg_cmt": 91.0, "purchase_msg": 24.0, "cmt": 91.0, "fol": 29.0, "aov": 11972725.0}, {"month": "2026.04", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 3000000000.0, "revenue": 3859150000.0, "t_units": 200.0, "units": 349.0, "units_o2o": null, "contacts": 200.0, "contacts_org": 28.0, "contacts_paid": 172.0, "budget": 30000000.0, "ad": 4007096.0, "msg": 152.0, "msg2": 134.0, "msg5": 32.0, "msg_org": 29.0, "msg_cmt": 26.0, "purchase_msg": 6.0, "cmt": 26.0, "fol": 2.0, "aov": 11057736.0}, {"month": "2026.04", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 1000000000.0, "revenue": 1291330000.0, "t_units": 67.0, "units": 120.0, "units_o2o": null, "contacts": 362.0, "contacts_org": 8.0, "contacts_paid": 354.0, "budget": 10000000.0, "ad": 6859809.0, "msg": 344.0, "msg2": 304.0, "msg5": 73.0, "msg_org": 8.0, "msg_cmt": 39.0, "purchase_msg": 4.0, "cmt": 39.0, "fol": 22.0, "aov": 10761083.0}, {"month": "2026.04", "shop": "06. Danke", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 1762070000.0, "t_units": 71.0, "units": 168.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 6454471.0, "msg": 239.0, "msg2": null, "msg5": null, "msg_org": 27.0, "msg_cmt": 31.0, "purchase_msg": 22.0, "cmt": 31.0, "fol": 7.0, "aov": 10488512.0}, {"month": "2026.04", "shop": "07. Cường Phát", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 3235050000.0, "t_units": 100.0, "units": 314.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 8254326.0, "msg": 400.0, "msg2": null, "msg5": null, "msg_org": 17.0, "msg_cmt": 42.0, "purchase_msg": null, "cmt": 42.0, "fol": 9.0, "aov": 10302707.0}, {"month": "2026.04", "shop": "08. Hotek", "tier": "MD", "has_source": false, "target": 1000000000.0, "revenue": 1733190000.0, "t_units": 100.0, "units": 192.0, "units_o2o": null, "contacts": 0.0, "contacts_org": null, "contacts_paid": null, "budget": 10000000.0, "ad": 6210884.0, "msg": 183.0, "msg2": null, "msg5": null, "msg_org": 4.0, "msg_cmt": 28.0, "purchase_msg": null, "cmt": 28.0, "fol": 2.0, "aov": 9027031.0}, {"month": "2026.03", "shop": "01. BigMi", "tier": "MD", "has_source": false, "target": 4000000000.0, "revenue": 4648740000.0, "t_units": 250.0, "units": 480.0, "units_o2o": 5.0, "contacts": 960.0, "contacts_org": 480.0, "contacts_paid": 480.0, "budget": 40000000.0, "ad": 34372618.0, "msg": 2429.0, "msg2": 2116.0, "msg5": 334.0, "msg_org": 267.0, "msg_cmt": 61.0, "purchase_msg": 5.0, "cmt": 224.0, "fol": 30.0, "aov": 9684875.0}, {"month": "2026.03", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 443.0, "contacts_org": 15.0, "contacts_paid": 428.0, "budget": 0.0, "ad": 3604129.0, "msg": 227.0, "msg2": 200.0, "msg5": 48.0, "msg_org": 14.0, "msg_cmt": 70.0, "purchase_msg": 8.0, "cmt": 70.0, "fol": 14.0, "aov": null}, {"month": "2026.03", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 4000000000.0, "revenue": 4336230000.0, "t_units": 267.0, "units": 360.0, "units_o2o": null, "contacts": 113.0, "contacts_org": 10.0, "contacts_paid": 103.0, "budget": 40000000.0, "ad": 6272382.0, "msg": 253.0, "msg2": 223.0, "msg5": 53.0, "msg_org": 10.0, "msg_cmt": 42.0, "purchase_msg": 2.0, "cmt": 42.0, "fol": 29.0, "aov": 12045083.0}, {"month": "2026.03", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 5000000000.0, "revenue": 5207950000.0, "t_units": 333.0, "units": 537.0, "units_o2o": null, "contacts": 45.0, "contacts_org": 5.0, "contacts_paid": 40.0, "budget": 50000000.0, "ad": 590652.0, "msg": 21.0, "msg2": 19.0, "msg5": 4.0, "msg_org": 5.0, "msg_cmt": 1.0, "purchase_msg": 1.0, "cmt": 1.0, "fol": 0.0, "aov": 9698231.0}, {"month": "2026.03", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 11.0, "contacts_org": 11.0, "contacts_paid": 0.0, "budget": 0.0, "ad": 0.0, "msg": null, "msg2": null, "msg5": null, "msg_org": 8.0, "msg_cmt": 0.0, "purchase_msg": null, "cmt": 0.0, "fol": 0.0, "aov": null}, {"month": "2026.02", "shop": "01. BigMi", "tier": "MD", "has_source": false, "target": 4000000000.0, "revenue": 3815660000.0, "t_units": 250.0, "units": 377.0, "units_o2o": 29.0, "contacts": 754.0, "contacts_org": 377.0, "contacts_paid": 377.0, "budget": 40000000.0, "ad": 54022767.0, "msg": 2981.0, "msg2": 2698.0, "msg5": 380.0, "msg_org": 260.0, "msg_cmt": 64.0, "purchase_msg": 29.0, "cmt": 472.0, "fol": 39.0, "aov": 10121114.0}, {"month": "2026.02", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 739.0, "contacts_org": 15.0, "contacts_paid": 724.0, "budget": 0.0, "ad": 7251162.0, "msg": 572.0, "msg2": 505.0, "msg5": 121.0, "msg_org": 14.0, "msg_cmt": 77.0, "purchase_msg": 8.0, "cmt": 77.0, "fol": 31.0, "aov": null}, {"month": "2026.02", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 5000000000.0, "revenue": 5157300000.0, "t_units": 333.0, "units": 463.0, "units_o2o": null, "contacts": 291.0, "contacts_org": 11.0, "contacts_paid": 280.0, "budget": 50000000.0, "ad": 16000036.0, "msg": 864.0, "msg2": 763.0, "msg5": 182.0, "msg_org": 12.0, "msg_cmt": 138.0, "purchase_msg": 5.0, "cmt": 138.0, "fol": 71.0, "aov": 11138877.0}, {"month": "2026.02", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 5000000000.0, "revenue": 5483690000.0, "t_units": 333.0, "units": 531.0, "units_o2o": null, "contacts": 837.0, "contacts_org": 27.0, "contacts_paid": 810.0, "budget": 50000000.0, "ad": 7115701.0, "msg": 806.0, "msg2": 712.0, "msg5": 170.0, "msg_org": 27.0, "msg_cmt": 38.0, "purchase_msg": 2.0, "cmt": 38.0, "fol": 9.0, "aov": 10327100.0}, {"month": "2026.02", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 9.0, "contacts_org": 9.0, "contacts_paid": 0.0, "budget": 0.0, "ad": 0.0, "msg": 0.0, "msg2": 0.0, "msg5": 0.0, "msg_org": 9.0, "msg_cmt": 0.0, "purchase_msg": null, "cmt": 0.0, "fol": 0.0, "aov": null}, {"month": "2026.01", "shop": "01. BigMi", "tier": "MD", "has_source": false, "target": 3000000000.0, "revenue": 3305840000.0, "t_units": 188.0, "units": 343.0, "units_o2o": 14.0, "contacts": 686.0, "contacts_org": 343.0, "contacts_paid": 343.0, "budget": 30000000.0, "ad": 56370949.0, "msg": 2514.0, "msg2": 2268.0, "msg5": 322.0, "msg_org": 200.0, "msg_cmt": 77.0, "purchase_msg": 14.0, "cmt": 555.0, "fol": 41.0, "aov": 9638017.0}, {"month": "2026.01", "shop": "02. Đại Hồng Phát", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 1037.0, "contacts_org": 21.0, "contacts_paid": 1016.0, "budget": 0.0, "ad": 14860619.0, "msg": 754.0, "msg2": 666.0, "msg5": 159.0, "msg_org": 21.0, "msg_cmt": 155.0, "purchase_msg": 3.0, "cmt": 155.0, "fol": 66.0, "aov": null}, {"month": "2026.01", "shop": "03. H&T Smart Home", "tier": "MD", "has_source": true, "target": 6500000000.0, "revenue": 6811200000.0, "t_units": 433.0, "units": 642.0, "units_o2o": null, "contacts": 441.0, "contacts_org": 20.0, "contacts_paid": 421.0, "budget": 65000000.0, "ad": 37852134.0, "msg": 2048.0, "msg2": 1808.0, "msg5": 432.0, "msg_org": 20.0, "msg_cmt": 217.0, "purchase_msg": 5.0, "cmt": 217.0, "fol": 163.0, "aov": 10609346.0}, {"month": "2026.01", "shop": "04. Mi360", "tier": "MD", "has_source": true, "target": 10000000000.0, "revenue": 10961210000.0, "t_units": 667.0, "units": 1229.0, "units_o2o": null, "contacts": 676.0, "contacts_org": 42.0, "contacts_paid": 634.0, "budget": 100000000.0, "ad": 10094946.0, "msg": 584.0, "msg2": 516.0, "msg5": 123.0, "msg_org": 41.0, "msg_cmt": 27.0, "purchase_msg": 1.0, "cmt": 27.0, "fol": 10.0, "aov": 8918804.0}, {"month": "2026.01", "shop": "05. Homecare", "tier": "MD", "has_source": true, "target": 0.0, "revenue": null, "t_units": 0.0, "units": null, "units_o2o": null, "contacts": 9.0, "contacts_org": 9.0, "contacts_paid": 0.0, "budget": 0.0, "ad": 0.0, "msg": 0.0, "msg2": 0.0, "msg5": 0.0, "msg_org": 9.0, "msg_cmt": null, "purchase_msg": null, "cmt": null, "fol": null, "aov": null}];
+// ---------- Data helpers: formatting, per-shop derived metrics, month aggregation ----------
+// RAW_ROWS comes from build-monthly-report.py: one object per (month, shop) with numeric fields
+// target, revenue, units, t_units, budget, ad, msg, msg2, msg5, purchase_msg, cmt, fol, aov, contacts...
+
+const MONTHS = [...new Set(RAW_ROWS.map(r => r.month))].sort();
+
+const n0 = v => (v == null || isNaN(v) ? 0 : v);
+const div = (a, b) => (b ? a / b : null);
+const shortName = s => s.replace(/^\d+\.\s*/, '');
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthLabel = m => `${MONTH_ABBR[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
+const monthShort = m => MONTH_ABBR[+m.slice(5) - 1];
+
+/** ₫ money in B / M / K like the reference deck (₫276.0M). */
+function fmtMoney(v, digits) {
+  if (v == null || isNaN(v)) return '–';
+  const a = Math.abs(v);
+  if (a >= 1e9) return '₫' + (v / 1e9).toFixed(digits ?? 2) + 'B';
+  if (a >= 1e6) return '₫' + (v / 1e6).toFixed(digits ?? 1) + 'M';
+  if (a >= 1e3) return '₫' + (v / 1e3).toFixed(digits ?? 1) + 'K';
+  return '₫' + Math.round(v);
+}
+const fmtInt = v => (v == null || isNaN(v) ? '–' : Math.round(v).toLocaleString('en-US'));
+const fmtPct = (v, d = 1) => (v == null || isNaN(v) ? '–' : (v * 100).toFixed(d) + '%');
+const fmtNum = (v, d = 1) => (v == null || isNaN(v) ? '–' : v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }));
+
+/** Derived metrics for one shop-month row (all ratios weighted on raw sums, not averaged). */
+function shopMetrics(r) {
+  const rev = n0(r.revenue), ad = n0(r.ad), msg = n0(r.msg);
+  return {
+    ...r,
+    name: shortName(r.shop),
+    rev, adCost: ad, msgs: msg,
+    ach: div(rev, r.target),
+    roas: div(rev, ad),
+    cir: div(ad, rev),
+    cpm: div(ad, msg),
+    cpc: div(ad, r.cmt),
+    r2: div(n0(r.msg2), msg),
+    r5: div(n0(r.msg5), r.msg2),
+    buyRate: div(n0(r.purchase_msg), msg),
+    budgetUse: r.budget ? ad / r.budget : (ad > 0 ? Infinity : null), // Infinity = spend without plan
+    unitAch: div(n0(r.units), r.t_units),
+  };
+}
+
+/** Sum a list of rows and derive the same ratios at total level. */
+function aggregate(rows) {
+  const sum = k => rows.reduce((s, r) => s + n0(r[k]), 0);
+  const t = {
+    shops: rows.length, rev: sum('revenue'), target: sum('target'), ad: sum('ad'), budget: sum('budget'),
+    msg: sum('msg'), msg2: sum('msg2'), msg5: sum('msg5'), buy: sum('purchase_msg'),
+    cmt: sum('cmt'), fol: sum('fol'), units: sum('units'), tUnits: sum('t_units'),
+    contacts: sum('contacts'), paid: sum('contacts_paid'),
+  };
+  return Object.assign(t, {
+    ach: div(t.rev, t.target), roas: div(t.rev, t.ad), cir: div(t.ad, t.rev), cpm: div(t.ad, t.msg),
+    cpc: div(t.ad, t.cmt), r2: div(t.msg2, t.msg), r5: div(t.msg5, t.msg2), buyRate: div(t.buy, t.msg),
+    budgetUse: div(t.ad, t.budget), unitAch: div(t.units, t.tUnits),
+  });
+}
+
+const rowsOf = m => RAW_ROWS.filter(r => r.month === m);
+const prevMonth = m => MONTHS[MONTHS.indexOf(m) - 1] || null;
+const pctChange = (cur, prev) => (prev ? cur / prev - 1 : null);
+
+/** Median of numeric values (nulls dropped). */
+function median(vals) {
+  const v = vals.filter(x => x != null).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const h = Math.floor(v.length / 2);
+  return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2;
+}
+
+/** Read a CSS custom property so charts follow the active theme. */
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/** Shared floating tooltip for the HTML-built visuals (bullet, funnel, table cells). */
+const Tip = {
+  el: null,
+  show(html, x, y) {
+    this.el = this.el || document.getElementById('tip');
+    this.el.innerHTML = html;
+    this.el.classList.add('on');
+    const w = this.el.offsetWidth, h = this.el.offsetHeight;
+    this.el.style.left = Math.min(x + 14, window.innerWidth - w - 8) + 'px';
+    this.el.style.top = Math.max(8, y - h - 12) + 'px';
+  },
+  hide() { this.el && this.el.classList.remove('on'); },
+  bind(root) {
+    root.querySelectorAll('[data-tip]').forEach(n => {
+      n.addEventListener('mousemove', e => Tip.show(n.dataset.tip, e.clientX, e.clientY));
+      n.addEventListener('mouseleave', () => Tip.hide());
+    });
+  },
+};
+
+// ---------- DOM sections: hero text, KPI tiles, concentration alert, bullet, funnel, shop matrix ----------
+
+function deltaBadge(cur, prev, goodWhenUp, label = 'MoM') {
+  const d = pctChange(cur, prev);
+  if (d == null || !isFinite(d)) return `<span class="delta">— ${label}</span>`;
+  const arrow = d >= 0 ? '▲' : '▼';
+  const cls = goodWhenUp == null ? '' : (d >= 0) === goodWhenUp ? 'up' : 'down';
+  return `<span class="delta ${cls}">${arrow} ${Math.abs(d * 100).toFixed(1)}% ${label}</span>`;
+}
+
+function renderHero(month, t) {
+  document.getElementById('hero-sub').innerHTML =
+    `<b>Channel Marketing · ${monthLabel(month)}</b> · ${t.shops} stores with data · Facebook Ads + store revenue · ROAS/CIR weighted (sum ÷ sum)`;
+  document.title = `CM Digital Performance · ${monthLabel(month)}`;
+}
+
+function renderKpis(t, p) {
+  const P = p || {};
+  const tiles = [
+    ['Revenue', fmtMoney(t.rev), `${t.hits}/${t.nT} stores on adjusted target`, deltaBadge(t.rev, P.rev, true)],
+    ['Amount Spent', fmtMoney(t.ad), `${fmtPct(t.budgetUse, 0)} of budget ${fmtMoney(t.budget)}`, deltaBadge(t.ad, P.ad, null)],
+    ['ROAS', fmtNum(t.roas, 1), 'revenue ÷ ad spend', deltaBadge(t.roas, P.roas, true)],
+    ['% CIR', fmtPct(t.cir, 2), 'ad spend ÷ revenue', deltaBadge(t.cir, P.cir, false)],
+    ['FB Messages', fmtInt(t.msg), `${fmtInt(t.msg2)} two-way`, deltaBadge(t.msg, P.msg, true)],
+    ['Cost/Message', fmtMoney(t.cpm), 'FB ad cost ÷ messages', deltaBadge(t.cpm, P.cpm, false)],
+  ];
+  document.getElementById('kpi-hero').innerHTML = tiles.map(([l, v, s, d]) =>
+    `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div>${d}</div>`).join('');
+
+  const chips = [
+    ['Stores on target', `${t.hits}/${t.nT}`, `adjusted · monthly plan only ${t.planHits}/${t.nT}`],
+    ['Sale units', fmtInt(t.units), `${fmtPct(t.unitAch, 0)} target ${fmtInt(t.tUnits)}`],
+    ['% 2-way / message', fmtPct(t.r2, 0), `${fmtInt(t.msg2)} conversations`],
+    ['% 5-way / 2-way', fmtPct(t.r5, 1), `${fmtInt(t.msg5)} deep conversations`],
+    ['Purchases from msg', fmtInt(t.buy), `${fmtPct(t.buyRate, 2)} / message`],
+    ['FB Comments', fmtInt(t.cmt), `${fmtMoney(t.cpc)} / comment`],
+    ['New followers', fmtInt(t.fol), P.fol ? `${P.fol > t.fol ? '▼' : '▲'} from ${fmtInt(P.fol)} last month` : ''],
+  ];
+  document.getElementById('kpi-strip').innerHTML = chips.map(([l, v, s]) =>
+    `<div class="chip"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+}
+
+/** Flag when one store carries an outsized share of revenue — totals then mislead. */
+function renderConcentrationAlert(shops, t) {
+  const slot = document.getElementById('alert-slot');
+  const top = [...shops].sort((a, b) => b.rev - a.rev)[0];
+  const share = div(top.rev, t.rev);
+  if (!top || share < 0.35) { slot.innerHTML = ''; return; }
+  const rest = aggregate(shops.filter(s => s.shop !== top.shop));
+  const restOthers = shops.filter(s => s.shop !== top.shop && s.target);
+  const restAch = div(restOthers.reduce((a, s) => a + s.rev, 0), restOthers.reduce((a, s) => a + Math.max(0, s.tAdj), 0));
+  slot.innerHTML = `<div class="alert"><div class="ico">!</div><div>
+    <h4>${top.name} makes up ${fmtPct(share, 0)} of monthly revenue — totals are skewed by a single store</h4>
+    <p>${top.name}: <b>${fmtMoney(top.rev)}</b> (${fmtPct(top.achM, 0)} of monthly plan, ${fmtInt(top.units)} units vs target ${fmtInt(top.t_units)}).
+    Excluding it, the other stores reach <b>${fmtPct(restAch, 1)} of adjusted target</b> (${restOthers.filter(s => s.met).length}/${restOthers.length} on target),
+    ROAS <b>${fmtNum(rest.roas, 1)}</b>, CIR <b>${fmtPct(rest.cir, 2)}</b>, Cost/Message <b>${fmtMoney(rest.cpm)}</b>.</p>
+  </div></div>`;
+}
+
+/** Bullet chart: achievement bar vs 100% target tick, axis capped at 160% with overflow marker. */
+function renderBullet(shops) {
+  const CAP = 1.6, el = document.getElementById('bullet');
+  const list = shops.filter(s => s.ach != null).sort((a, b) => b.ach - a.ach);
+  const pos = v => (Math.min(v, CAP) / CAP) * 100;
+  el.innerHTML = list.map(s => {
+    const ok = s.ach >= 1;
+    const tip = `<b>${s.name}</b><br>Revenue ${fmtMoney(s.rev)} / adjusted target ${fmtMoney(Math.max(0, s.tAdj))}<br>Monthly plan ${fmtMoney(s.target)} (${fmtPct(s.achM, 0)})`;
+    return `<div class="b-row" data-tip="${tip.replace(/"/g, '&quot;')}">
+      <div class="b-name">${s.name}</div>
+      <div class="b-track"><div class="b-fill ${ok ? '' : 'under'} ${s.ach > CAP ? 'over' : ''}" style="width:${pos(s.ach)}%"></div>
+        <div class="b-target" style="left:${pos(1)}%"></div></div>
+      <div class="b-val">${ok ? '' : fmtPct(s.ach, 0)}<span class="st ${ok ? 'ok' : 'no'}">${ok ? '✓ met' : '▼ below'}</span>
+        <span class="b-sub">${fmtMoney(s.rev)} / ${fmtMoney(Math.max(0, s.tAdj))}</span></div></div>`;
+  }).join('') + `<div class="b-axis"><span></span><div>${[0, .5, 1, 1.5].map(v =>
+    `<span style="left:${pos(v)}%">${v * 100}%</span>`).join('')}</div><span></span></div>`;
+  Tip.bind(el);
+}
+
+/** Message funnel (single series → one colour) + per-shop conversion ranks. */
+function renderFunnel(t, shops) {
+  const steps = [['Total message', t.msg], ['2-way', t.msg2], ['5-way', t.msg5], ['Purchases', t.buy]];
+  const conv = [null, t.r2, t.r5, div(t.buy, t.msg5)];
+  const convLbl = [null, '2-way / message', '5-way / 2-way', 'purchase / 5-way'];
+  let html = steps.map(([l, v], i) => `
+    <div class="f-step"><div class="f-lbl">${l}</div>
+      <div class="f-bar" style="width:${Math.max(4, div(v, t.msg) * 100)}%;background:var(--brand)"
+        data-tip="<b>${l}</b>: ${fmtInt(v)}<br>${fmtPct(div(v, t.msg), 1)} of total messages">${fmtInt(v)}</div>
+      ${conv[i] != null ? `<div class="f-conv"><b>${fmtPct(conv[i], 1)}</b> ${convLbl[i]}</div>` : ''}</div>`).join('');
+  const rank = (key, title, fmt) => {
+    const top = shops.filter(s => s[key] != null && s.msgs > 0).sort((a, b) => b[key] - a[key]);
+    return `<div class="f-split"><h4>${title}</h4><div class="mini-rank">${top.map(s =>
+      `<div><span>${s.name}</span><span>${fmt(s[key])}</span></div>`).join('')}</div></div>`;
+  };
+  html += rank('r5', '% 5-way / 2-way by store', v => fmtPct(v, 0));
+  html += rank('buyRate', '% Purchase / message by store', v => fmtPct(v, 1));
+  const el = document.getElementById('funnel');
+  el.innerHTML = html;
+  Tip.bind(el);
+}
+
+/* ---------- sortable shop matrix ---------- */
+const MATRIX_COLS = [
+  { k: 'name', l: 'Store' },
+  { k: 'rev', l: 'Revenue', f: v => fmtMoney(v), bar: true },
+  { k: 'ach', l: 'Adj. target', f: v => (v == null ? '–' : v >= 1 ? '✓ Met' : fmtPct(v, 0)), cls: v => (v >= 1 ? 'good-t' : v < 0.7 ? 'bad-t' : '') },
+  { k: 'achM', l: '% of plan', f: v => `<span class="muted">${fmtPct(v, 0)}</span>` },
+  { k: 'adCost', l: 'Ad spend', f: v => fmtMoney(v), bar: true, navy: true },
+  { k: 'budgetUse', l: '% Budget', f: v => (v === Infinity ? '<span class="flag">No plan</span>' : fmtPct(v, 0)) },
+  { k: 'roas', l: 'ROAS', f: v => fmtNum(v, 1), bar: true },
+  { k: 'cir', l: '% CIR', f: v => fmtPct(v, 2), cls: (v, t) => (v > 2 * t.cir ? 'bad-t' : '') },
+  { k: 'msgs', l: 'Messages', f: fmtInt, bar: true, navy: true },
+  { k: 'cpm', l: 'Cost/Msg', f: v => fmtMoney(v), bar: true, cls: (v, t) => (v > 1.3 * t.cpm ? 'bad-t' : v < 0.75 * t.cpm ? 'good-t' : '') },
+  { k: 'r2', l: '2-way %', f: v => fmtPct(v, 0) },
+  { k: 'r5', l: '5-way/2-way', f: v => fmtPct(v, 0) },
+  { k: 'purchase_msg', l: 'Purch. (msg)', f: fmtInt },
+  { k: 'cmt', l: 'Comments', f: fmtInt },
+  { k: 'cpc', l: 'Cost/Cmt', f: v => fmtMoney(v) },
+  { k: 'mom', l: 'Rev. MoM', f: v => (v == null ? '<span class="pill">new</span>' : `<span class="${v >= 0 ? 'good-t' : 'bad-t'}">${v >= 0 ? '▲' : '▼'}${Math.abs(v * 100).toFixed(0)}%</span>`) },
+];
+const matrixSort = { key: 'rev', dir: -1 };
+
+function renderMatrix(shops, t, prevRows) {
+  const prevBy = Object.fromEntries((prevRows || []).map(r => [r.shop, r]));
+  shops.forEach(s => { const p = prevBy[s.shop]; s.mom = p && p.revenue ? s.rev / p.revenue - 1 : null; });
+  const max = {};
+  MATRIX_COLS.filter(c => c.bar).forEach(c => { max[c.k] = Math.max(...shops.map(s => s[c.k] || 0)); });
+  const sorted = [...shops].sort((a, b) => {
+    const x = a[matrixSort.key], y = b[matrixSort.key];
+    if (typeof x === 'string') return matrixSort.dir * x.localeCompare(y);
+    return matrixSort.dir * ((x ?? -Infinity) - (y ?? -Infinity));
+  });
+  const head = `<thead><tr>${MATRIX_COLS.map(c => `<th tabindex="0" data-k="${c.k}"
+    class="${matrixSort.key === c.k ? 'sorted' : ''}" data-dir="${matrixSort.dir < 0 ? '↓' : '↑'}">${c.l}</th>`).join('')}</tr></thead>`;
+  const cell = (c, s) => {
+    if (c.k === 'name') return `<td><div class="shop-cell">${s.name}<span class="pill tier ${(s.tier || '').toLowerCase()}">${s.tier || ''}</span></div></td>`;
+    const v = s[c.k], txt = c.f(v), cls = c.cls ? c.cls(v, t) : '';
+    if (!c.bar) return `<td class="${cls}">${txt}</td>`;
+    const w = max[c.k] ? Math.max(2, ((v || 0) / max[c.k]) * 100) : 0;
+    return `<td><span class="cell ${c.navy ? 'n' : ''}"><i style="width:${w}%"></i><b class="${cls}">${txt}</b></span></td>`;
+  };
+  const body = `<tbody>${sorted.map(s => `<tr>${MATRIX_COLS.map(c => cell(c, s)).join('')}</tr>`).join('')}</tbody>`;
+  const totals = { name: 'Total', rev: t.rev, ach: t.ach, achM: t.achM, adCost: t.ad, budgetUse: t.budgetUse, roas: t.roas, cir: t.cir, msgs: t.msg,
+    cpm: t.cpm, r2: t.r2, r5: t.r5, purchase_msg: t.buy, cmt: t.cmt, cpc: t.cpc, mom: null };
+  const foot = `<tfoot><tr>${MATRIX_COLS.map(c => (c.k === 'name' ? '<td>Total</td>' : c.k === 'mom' ? '<td></td>' : c.k === 'ach' ? `<td>${t.hits}/${t.nT} met</td>` : `<td>${c.f(totals[c.k])}</td>`)).join('')}</tr></tfoot>`;
+  const table = document.getElementById('matrix');
+  table.innerHTML = head + body + foot;
+  table.querySelectorAll('th').forEach(th => {
+    const go = () => {
+      const k = th.dataset.k;
+      matrixSort.dir = matrixSort.key === k ? -matrixSort.dir : (k === 'name' ? 1 : -1);
+      matrixSort.key = k;
+      renderMatrix(shops, t, prevRows);
+    };
+    th.addEventListener('click', go);
+    th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+}
+
+// ---------- Chart.js core: theme colours, defaults, value-label plugin, bar+line combo builder ----------
+
+const CHARTS = {};
+
+function themeColors() {
+  return {
+    brand: cssVar('--brand'), s2: cssVar('--series2'), line: cssVar('--line'), line2: cssVar('--line2'), context: cssVar('--context'), ink: cssVar('--ink'),
+    ink2: cssVar('--ink-2'), muted: cssVar('--muted'), grid: cssVar('--grid'), surface: cssVar('--surface'),
+  };
+}
+
+function applyChartDefaults(C) {
+  Chart.defaults.font.family = '"Be Vietnam Pro", system-ui, sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = C.muted;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.animation.duration = 500;
+  Object.assign(Chart.defaults.plugins.tooltip, {
+    backgroundColor: C.ink, titleColor: C.surface, bodyColor: C.surface, padding: 10, cornerRadius: 10,
+    titleFont: { weight: '700' }, displayColors: true, boxPadding: 4,
+  });
+  Chart.defaults.plugins.legend.display = false;
+}
+
+function makeChart(id, config) {
+  if (CHARTS[id]) CHARTS[id].destroy();
+  const el = document.getElementById(id);
+  if (el) CHARTS[id] = new Chart(el, config);
+}
+
+/** Rounded 'pill' value label (reference-deck style). */
+function drawPill(ctx, x, y, txt, stroke, C) {
+  ctx.font = '700 10.5px "Be Vietnam Pro"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(txt).width + 12, h = 17;
+  ctx.fillStyle = C.surface; ctx.strokeStyle = stroke; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, 8); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.fillText(txt, x, y + .5);
+  return { x0: x - w / 2, x1: x + w / 2, y0: y - h / 2, y1: y + h / 2 };
+}
+
+/**
+ * Draws value labels like the reference deck: pill labels above line points, small text above bars.
+ * Enabled per dataset via `_label: v => string`.
+ */
+const valueLabelPlugin = {
+  id: 'valueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart, C = themeColors();
+    // Too narrow per category (phones): skip value labels, tooltips still carry every value.
+    const minSlot = (chart.options.plugins.valueLabels || {}).minSlot ?? 44;
+    if (chart.chartArea.width / Math.max(1, chart.data.labels.length) < minSlot) return;
+    const placed = []; // drawn pill boxes — skip a pill that would overlap one already drawn
+    chart.data.datasets.forEach((ds, di) => {
+      if (!ds._label || !chart.isDatasetVisible(di)) return;
+      const meta = chart.getDatasetMeta(di);
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      meta.data.forEach((el, i) => {
+        const v = ds.data[i];
+        if (v == null || isNaN(v)) return;
+        const txt = ds._label(v, i);
+        if (!txt) return;
+        if (ds.type === 'line' || meta.type === 'line') {
+          ctx.font = '700 10.5px "Be Vietnam Pro"';
+          const w = ctx.measureText(txt).width + 12, h = 17, x = el.x, y = el.y - 15;
+          const box = { x0: x - w / 2, x1: x + w / 2, y0: y - h / 2, y1: y + h / 2 };
+          if (placed.some(b => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) return;
+          placed.push(drawPill(ctx, x, y, txt, ds.borderColor, C));
+          ctx.font = '700 10px "Be Vietnam Pro"';
+        } else {
+          ctx.font = '700 10px "Be Vietnam Pro"';
+          const horiz = chart.options.indexAxis === 'y';
+          const bg = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor;
+          if (horiz) { ctx.fillStyle = C.ink2; ctx.textAlign = 'left'; ctx.fillText(txt, el.x + 4, el.y); }
+          else if (el.base - el.y > 24 && ctx.measureText(txt).width < el.width - 2) {
+            // inside the bar foot (reference-deck style), so labels never collide with line pills above
+            ctx.fillStyle = bg === C.brand ? '#fff' : C.ink; // white only on the saturated brand fill
+            ctx.fillText(txt, el.x, el.base - 10);
+          } else if (!ds._insideOnly) { ctx.fillStyle = C.ink2; ctx.fillText(txt, el.x, Math.min(el.y, el.base) - 8); }
+        }
+      });
+      ctx.restore();
+    });
+  },
+};
+
+/**
+ * Bar + line combo with left axis (bars) and right axis (lines) — the layout used in the team's decks.
+ * spec: { labels, bars:[{label,data,color,stack,_label}], lines:[{label,data,color,dashed,_label,axis}],
+ *         yFmt, y1Fmt, tipFmt:{[label]:fmt}, title(i), highlight:[bool], rotate }
+ */
+function makeCombo(id, spec) {
+  const C = themeColors();
+  const bars = spec.bars.map(b => ({
+    type: 'bar', label: b.label, data: b.data, yAxisID: 'y', order: 3, stack: b.stack,
+    backgroundColor: spec.highlight && !b.stack ? spec.highlight.map(h => (h ? b.color : C.context)) : b.color,
+    borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: spec.barMax || 46, _label: b._label, _insideOnly: b._insideOnly,
+  }));
+  const lines = (spec.lines || []).map(l => ({
+    type: 'line', label: l.label, data: l.data, yAxisID: l.axis || 'y1', order: 1,
+    borderColor: l.color, backgroundColor: l.color, borderWidth: 2, borderDash: l.dashed ? [5, 4] : [],
+    tension: .35, pointRadius: 4.5, pointHoverRadius: 6, pointBackgroundColor: C.surface, pointBorderColor: l.color,
+    pointBorderWidth: 2, spanGaps: true, _label: l._label,
+    // marker:'tick' -> no connecting line, a wide horizontal tick per category (targets on nominal axes)
+    ...(l.marker === 'tick' ? { showLine: false, pointStyle: 'line', pointRadius: 16, pointHoverRadius: 18, pointBorderWidth: 3 } : {}),
+  }));
+  const fmtFor = label => (spec.tipFmt && spec.tipFmt[label]) || (v => fmtNum(v, 1));
+  const hasY1 = lines.some(l => l.yAxisID === 'y1');
+  // Float right-axis lines in the upper band of the plot (negative, hidden min) so line pills sit above bar-foot labels.
+  const y1Max = Math.max(0, ...lines.filter(l => l.yAxisID === 'y1').flatMap(l => l.data.filter(v => v != null && isFinite(v))));
+  makeChart(id, {
+    data: { labels: spec.labels, datasets: [...lines, ...bars] },
+    options: {
+      layout: { padding: { top: 22 } },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { stacked: !!spec.stacked, grid: { display: false }, border: { color: C.grid },
+          ticks: { color: C.ink2, maxRotation: spec.rotate ?? 0, minRotation: spec.rotate ?? 0, autoSkip: false, font: { weight: '600' } } },
+        y: { stacked: !!spec.stacked, beginAtZero: true, max: spec.yMax, border: { display: false }, grid: { color: C.grid },
+          ticks: { callback: spec.yFmt, maxTicksLimit: 5 }, grace: '12%' },
+        y1: { display: hasY1 && !spec.hideY1, position: 'right', min: -(y1Max || 1) * 0.9, max: (y1Max || 1) * 1.15, border: { display: false }, grid: { display: false },
+          ticks: { callback: v => (v < 0 || v > y1Max * 1.001 || !spec.y1Fmt ? '' : spec.y1Fmt(v)), maxTicksLimit: 6 } },
+      },
+      plugins: {
+        valueLabels: { minSlot: spec.minSlot ?? 44 },
+        tooltip: { callbacks: {
+          title: items => (spec.title ? spec.title(items[0].dataIndex) : items[0].label),
+          label: c => ` ${c.dataset.label}: ${fmtFor(c.dataset.label)(c.parsed.y)}`,
+        } },
+      },
+    },
+    plugins: [valueLabelPlugin, ...(spec.plugins || [])],
+  });
+}
+
+/** Legend row markup for a combo chart (bars = squares, lines = short strokes). */
+function comboLegend(items) {
+  return items.map(([label, color, kind]) =>
+    `<span><i class="sw ${kind === 'line' ? 'ln' : ''}" style="background:${color}"></i>${label}</span>`).join('');
+}
+
+// ---------- Month-over-month combo charts (bars + line), all months up to the selected one ----------
+
+function renderTrendCharts(month) {
+  const C = themeColors();
+  const months = MONTHS.filter(m => m <= month);
+  const aggs = months.map(m => aggregate(rowsOf(m)));
+  const base = {
+    labels: months.map(monthShort),
+    highlight: months.map(m => m === month),
+    title: i => `${monthLabel(months[i])} · ${aggs[i].shops} stores`,
+  };
+  const money0 = v => fmtMoney(v, 0);
+
+  makeCombo('c-rev-cir', { ...base,
+    bars: [{ label: 'Revenue', data: aggs.map(a => a.rev), color: C.brand, _label: v => fmtMoney(v, 1) }],
+    lines: [{ label: '% CIR', data: aggs.map(a => a.cir * 100), color: C.line, _label: v => v.toFixed(2) + '%' }],
+    yFmt: money0, y1Fmt: v => v.toFixed(1) + '%',
+    tipFmt: { Revenue: v => fmtMoney(v), '% CIR': v => v.toFixed(2) + '%' } });
+
+  makeCombo('c-msg-cpm', { ...base,
+    bars: [{ label: 'FB Messages', data: aggs.map(a => a.msg), color: C.brand, _label: v => fmtInt(v) }],
+    lines: [{ label: 'Cost/Message', data: aggs.map(a => a.cpm), color: C.line, _label: v => fmtMoney(v) }],
+    yFmt: v => (v >= 1000 ? v / 1000 + 'K' : v), y1Fmt: money0,
+    tipFmt: { 'FB Messages': fmtInt, 'Cost/Message': v => fmtMoney(v) } });
+
+  makeCombo('c-ad-roas', { ...base,
+    bars: [{ label: 'Ad spend', data: aggs.map(a => a.ad), color: C.brand, _label: v => fmtMoney(v, 0) }],
+    lines: [{ label: 'ROAS', data: aggs.map(a => a.roas), color: C.line, _label: v => fmtNum(v, 1) }],
+    yFmt: money0, y1Fmt: v => v,
+    tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) } });
+
+  makeCombo('c-rev-target', { ...base,
+    bars: [{ label: 'Revenue', data: aggs.map(a => a.rev), color: C.brand, _label: (v, i) => fmtPct(aggs[i].ach, 0) }],
+    lines: [{ label: 'Target', data: aggs.map(a => a.target), color: C.ink, dashed: true, axis: 'y' }],
+    yFmt: money0, tipFmt: { Revenue: v => fmtMoney(v), Target: v => fmtMoney(v) } });
+
+  document.getElementById('trend-note').textContent =
+    `${monthShort(months[0])}–${monthShort(month)} ${month.slice(0, 4)} · number of stores with data changes by month (${aggs.map(a => a.shops).join(' → ')}) — read trends with coverage in mind`;
+}
+
+// ---------- Per-shop charts for the selected month: bar+line combos, quadrant bubble, engagement ----------
+
+/** Cap extreme outliers on a line so one shop does not flatten the rest; the label keeps the real value. */
+function capOutliers(values, factor = 4) {
+  const med = median(values.filter(v => v != null && v > 0));
+  const cap = med ? med * factor : null;
+  return { data: values.map(v => (cap && v > cap ? cap : v)), isCapped: values.map(v => !!(cap && v > cap)) };
+}
+
+function renderShopCombos(shops) {
+  const C = themeColors();
+  const list = [...shops].sort((a, b) => b.adCost - a.adCost);
+  const labels = list.map(s => s.name);
+  const base = { labels, rotate: 35, barMax: 40, title: i => `${list[i].name} (${list[i].tier})` };
+  const money0 = v => fmtMoney(v, 0);
+
+  makeCombo('c-spend-roas', { ...base,
+    bars: [{ label: 'Ad spend', data: list.map(s => s.adCost), color: C.brand, _label: v => fmtMoney(v, 1) }],
+    lines: [{ label: 'ROAS', data: list.map(s => s.roas), color: C.line, _label: v => fmtNum(v, 1) }],
+    yFmt: money0, y1Fmt: v => v, tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) } });
+
+  const cpc = capOutliers(list.map(s => s.cpc));
+  makeCombo('c-cost-msg-cmt', { ...base,
+    bars: [{ label: 'FB Ad Cost', data: list.map(s => s.adCost), color: C.brand }],
+    lines: [
+      { label: 'Cost/Message', data: list.map(s => s.cpm), color: C.line, _label: v => fmtMoney(v, 1) },
+      { label: 'Cost/Comment', data: cpc.data, color: C.line2, _label: (v, i) => (cpc.isCapped[i] ? fmtMoney(list[i].cpc) + '↑' : '') },
+    ],
+    yFmt: money0, y1Fmt: money0,
+    tipFmt: { 'FB Ad Cost': v => fmtMoney(v), 'Cost/Message': v => fmtMoney(v), 'Cost/Comment': v => fmtMoney(v) } });
+
+  const byUnits = [...shops].sort((a, b) => n0(b.units) - n0(a.units));
+  makeCombo('c-aov-units', { labels: byUnits.map(s => s.name), rotate: 35, barMax: 40, title: i => byUnits[i].name,
+    bars: [{ label: 'Sale units', data: byUnits.map(s => n0(s.units)), color: C.brand, _label: v => fmtInt(v) }],
+    lines: [{ label: 'AOV', data: byUnits.map(s => s.aov), color: C.line, _label: v => fmtMoney(v, 1) }],
+    yFmt: v => fmtInt(v), y1Fmt: money0, tipFmt: { 'Sale units': fmtInt, AOV: v => fmtMoney(v) } });
+
+  const byContacts = [...shops].sort((a, b) => n0(b.contacts) - n0(a.contacts));
+  makeCombo('c-contacts', { labels: byContacts.map(s => s.name), rotate: 35, barMax: 40, stacked: true, title: i => byContacts[i].name,
+    bars: [
+      { label: 'Paid contacts', data: byContacts.map(s => n0(s.contacts_paid)), color: C.brand, stack: 'c' },
+      { label: 'Organic contacts', data: byContacts.map(s => n0(s.contacts_org)), color: C.s2, stack: 'c' },
+    ],
+    lines: [{ label: '% Organic', data: byContacts.map(s => (s.contacts ? (n0(s.contacts_org) / s.contacts) * 100 : null)), color: C.line, _label: v => v.toFixed(0) + '%' }],
+    yFmt: v => fmtInt(v), y1Fmt: v => v + '%',
+    tipFmt: { 'Paid contacts': fmtInt, 'Organic contacts': fmtInt, '% Organic': v => v.toFixed(1) + '%' } });
+}
+
+function renderQuadrant(shops, t) {
+  const C = themeColors(), CAP = 160;
+  const pts = shops.filter(s => s.cpm != null && s.ach != null);
+  const maxAd = Math.max(...pts.map(s => s.adCost));
+  const data = pts.map(s => ({ x: s.cpm, y: Math.min(s.ach * 100, CAP), r: 5 + 13 * Math.sqrt(s.adCost / maxAd), s }));
+  const xMax = Math.ceil(Math.max(...pts.map(s => s.cpm)) / 5000) * 5000 + 5000;
+
+  const quadPlugin = {
+    id: 'quad',
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea: a, scales: { x, y } } = chart;
+      const qx = x.getPixelForValue(t.cpm), qy = y.getPixelForValue(100);
+      ctx.save();
+      ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(qx, a.top); ctx.lineTo(qx, a.bottom); ctx.moveTo(a.left, qy); ctx.lineTo(a.right, qy); ctx.stroke();
+      ctx.font = '700 11px "Be Vietnam Pro"'; ctx.fillStyle = C.muted;
+      ctx.textAlign = 'left'; ctx.fillText('SCALE · cheap & on target', a.left + 8, a.top + 14);
+      ctx.fillText('FIX CONVERSION · cheap but below', a.left + 8, a.bottom - 8);
+      ctx.textAlign = 'right'; ctx.fillText('COSTLY but on target', a.right - 8, a.top + 14);
+      ctx.fillText('ACT NOW · costly & below', a.right - 8, a.bottom - 8);
+      ctx.restore();
+    },
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart, meta = chart.getDatasetMeta(0);
+      ctx.save(); ctx.font = '600 11.5px "Be Vietnam Pro"'; ctx.fillStyle = C.ink; ctx.textBaseline = 'middle';
+      // Place labels top-down; nudge a label below any already-placed box it would collide with.
+      const placed = [], LH = 14;
+      meta.data.map((el, i) => ({ el, d: data[i] })).sort((a, b) => a.el.y - b.el.y).forEach(({ el, d }) => {
+        const over = d.s.ach * 100 > CAP;
+        const txt = d.s.name + (over ? ' ↑' : '');
+        const w = ctx.measureText(txt).width;
+        const right = el.x + d.r + 4 + w < chart.chartArea.right;
+        const x0 = right ? el.x + d.r + 4 : el.x - d.r - 4 - w;
+        let y = el.y;
+        while (placed.some(p => x0 < p.x1 && x0 + w > p.x0 && Math.abs(y - p.y) < LH)) y += 3;
+        placed.push({ x0, x1: x0 + w, y });
+        if (Math.abs(y - el.y) > 6) { // leader line back to the bubble
+          ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.beginPath();
+          ctx.moveTo(right ? el.x + d.r : el.x - d.r, el.y); ctx.lineTo(right ? x0 - 2 : x0 + w + 2, y); ctx.stroke();
+        }
+        ctx.textAlign = 'left';
+        ctx.fillText(txt, x0, y);
+      });
+      ctx.restore();
+    },
+  };
+
+  makeChart('c-quad', {
+    type: 'bubble',
+    data: { datasets: [{ data, backgroundColor: C.brand + 'cc', borderColor: C.surface, borderWidth: 2, hoverBorderWidth: 2 }] },
+    options: {
+      layout: { padding: { top: 6, right: 10 } },
+      scales: {
+        x: { min: 0, max: xMax, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: 'Cost / Message (₫)' }, ticks: { callback: v => fmtMoney(v, 0) } },
+        y: { min: 0, max: CAP + 10, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: '% of adjusted target' }, ticks: { callback: v => (v <= CAP ? v + '%' : ''), stepSize: 40 } },
+      },
+      plugins: { tooltip: { displayColors: false, callbacks: {
+        title: items => items[0].raw.s.name,
+        label: c => { const s = c.raw.s; return [`Cost/Message: ${fmtMoney(s.cpm)}`, `Adjusted target: ${fmtAdj(s)} · plan ${fmtPct(s.achM, 0)}`, `Ad spend: ${fmtMoney(s.adCost)}`, `ROAS: ${fmtNum(s.roas, 1)}`]; },
+      } } },
+    },
+    plugins: [quadPlugin],
+  });
+}
+
+/** Comments vs new followers per shop — two count series on one shared axis. */
+function renderEngagement(shops) {
+  const C = themeColors();
+  const list = [...shops].sort((a, b) => n0(b.cmt) - n0(a.cmt));
+  const ds = (k, label, color) => ({ label, data: list.map(s => n0(s[k])), backgroundColor: color, borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: 'left', barPercentage: .8, categoryPercentage: .7, maxBarThickness: 14 });
+  makeChart('c-eng', {
+    type: 'bar',
+    data: { labels: list.map(s => s.name), datasets: [ds('cmt', 'Comments', C.brand), ds('fol', 'New followers', C.s2)] },
+    options: {
+      indexAxis: 'y', interaction: { mode: 'index', intersect: false },
+      scales: { x: { beginAtZero: true, grid: { color: C.grid }, border: { display: false } }, y: { grid: { display: false }, border: { color: C.grid }, ticks: { color: C.ink, font: { weight: '600' } } } },
+      plugins: { tooltip: { callbacks: { afterBody: items => { const s = list[items[0].dataIndex]; return `Cost/Comment: ${fmtMoney(s.cpc)}`; } } } },
+    },
+  });
+}
+
+// ---------- Monthly target adjusted by the quarter plan ----------
+// Shops plan stock-in per QUARTER: a weak month is fine if earlier months already front-loaded.
+// Adjusted target of month m = Σ target of quarter months up to m − Σ revenue of the earlier quarter months.
+// Revenue(m) ≥ Target ĐC  ⇒ shop is on track for the quarter ⇒ counts as "on target" this month.
+
+/** Months of the selected month's quarter, up to and including it (e.g. 2026.09 -> 07, 08, 09). */
+function quarterMonths(month) {
+  const y = month.slice(0, 4), q = Math.ceil(+month.slice(5) / 3);
+  return MONTHS.filter(x => x.slice(0, 4) === y && Math.ceil(+x.slice(5) / 3) === q && x <= month);
+}
+
+/** Attach adjusted-target fields to every shop and the month total. `ach` becomes the adjusted achievement. */
+function attachAdjustedTarget(shops, t, month) {
+  const qm = quarterMonths(month);
+  const prior = qm.filter(m => m !== month);
+  shops.forEach(s => {
+    const rs = RAW_ROWS.filter(r => r.shop === s.shop && qm.includes(r.month));
+    const tQ = rs.reduce((a, r) => a + n0(r.target), 0);
+    const priorRev = rs.filter(r => r.month !== month).reduce((a, r) => a + n0(r.revenue), 0);
+    const tAdj = tQ - priorRev;
+    const met = s.target ? s.rev >= tAdj : null;
+    const achM = s.ach; // monthly-plan achievement, read before `ach` is re-pointed below
+    Object.assign(s, {
+      achM, tQ, priorRev, tAdj, met, gap: tAdj - s.rev,
+      ach: !s.target ? null : tAdj > 0 ? s.rev / tAdj : Infinity, // Infinity = quarter already covered before this month
+      rescued: !!met && achM != null && achM < 1,                // missed the month plan but on track for the quarter
+    });
+  });
+  const withT = shops.filter(s => s.target);
+  const tAdjSum = withT.reduce((a, s) => a + Math.max(0, s.tAdj), 0);
+  Object.assign(t, {
+    achM: t.ach, tAdj: tAdjSum, ach: div(t.rev, tAdjSum),
+    hits: withT.filter(s => s.met).length, planHits: withT.filter(s => s.achM >= 1).length, nT: withT.length,
+    rescued: withT.filter(s => s.rescued), qLabel: `Q${Math.ceil(+month.slice(5) / 3)}`,
+    priorLabel: prior.length ? prior.map(monthShort).join('+') : '', qMonths: qm,
+  });
+}
+
+/** Display text for adjusted achievement: met shops read "✓ Met", others the % of the adjusted target. */
+const fmtAdj = s => (s.met == null ? '–' : s.met ? '✓ Met' : fmtPct(s.ach, 0));
+
+/** Status pill (✓ Met / % of adjusted target) above the higher of bar top and target tick. */
+function statusPills(list) {
+  return {
+    id: 'statusPills',
+    afterDatasetsDraw(chart) {
+      const C = themeColors(), { ctx, chartArea } = chart;
+      const bar = chart.data.datasets.findIndex(d => d.type === 'bar');
+      const tick = chart.data.datasets.findIndex(d => d.label === 'Adjusted target');
+      const bars = chart.getDatasetMeta(bar).data, ticks = chart.getDatasetMeta(tick).data;
+      ctx.save();
+      list.forEach((s, i) => {
+        if (!bars[i] || !ticks[i] || s.met == null) return;
+        const y = Math.max(chartArea.top + 9, Math.min(bars[i].y, ticks[i].y) - 14);
+        drawPill(ctx, bars[i].x, y, fmtAdj(s), s.met ? C.brand : C.line, C);
+      });
+      ctx.restore();
+    },
+  };
+}
+
+/** Bar+tick combo: month revenue vs adjusted target (ink tick) and month plan (grey tick). */
+function renderAdjustedCombo(canvasId, legendId, shops, opts = {}) {
+  const C = themeColors(), light = cssVar('--q1');
+  const list = shops.filter(s => s.target).sort((a, b) => b.rev - a.rev);
+  const name = opts.shortNames ? (n => n.replace(/\s*Smart\s?Home$/i, '')) : (n => n);
+  // Keep one outlier from flattening everyone else: cap the axis, the bar label keeps the real value.
+  const sorted = list.map(s => s.rev).sort((a, b) => b - a);
+  const others = Math.max(sorted[1] || 0, ...list.map(s => Math.max(s.tAdj, s.target)));
+  const yMax = sorted[0] > others * 1.6 ? others * 1.25 : undefined;
+  makeCombo(canvasId, {
+    labels: list.map(s => name(s.name)), rotate: opts.rotate ?? 0, barMax: 48, minSlot: 30, yMax,
+    title: i => `${list[i].name} · ${list[i].met ? 'on' : 'below'} adjusted target`,
+    bars: [{ label: `${opts.monthShort} revenue`, data: list.map(s => s.rev), color: list.map(s => (s.met ? C.brand : light)),
+      _label: v => fmtMoney(v, 1) + (yMax && v > yMax ? '↑' : ''), _insideOnly: true }],
+    lines: [
+      { label: 'Adjusted target', data: list.map(s => Math.max(0, s.tAdj)), color: C.ink, axis: 'y', marker: 'tick' },
+      { label: 'Monthly plan', data: list.map(s => s.target), color: C.muted, axis: 'y', marker: 'tick' },
+    ],
+    yFmt: v => fmtMoney(v, 0), plugins: [statusPills(list)],
+    tipFmt: { [`${opts.monthShort} revenue`]: v => fmtMoney(v), 'Adjusted target': v => fmtMoney(v), 'Monthly plan': v => fmtMoney(v) },
+  });
+  if (legendId) document.getElementById(legendId).innerHTML = comboLegend([
+    [`${opts.monthShort} revenue · met`, C.brand, 'bar'], [`${opts.monthShort} revenue · below`, light, 'bar'],
+    [`Adjusted target = ${opts.qLabel} target − ${opts.priorLabel || 'prior'} revenue`, C.ink, 'line'], ['Monthly plan', C.muted, 'line']]);
+}
+
+/** Detail section: KPI chips, combo chart and the adjusted-target table. */
+function renderAdjustedSection(month, shops, t) {
+  const ms = monthShort(month);
+  document.getElementById('q-title').textContent = `${ms} target adjusted to the ${t.qLabel} plan`;
+  document.getElementById('q-note').innerHTML = t.priorLabel
+    ? `Adjusted ${ms} target = ${t.qLabel} target (${t.qMonths.map(monthShort).join('+')}) − revenue already booked in ${t.priorLabel}. Stores that front-loaded stock-in earlier need less this month.`
+    : `First month of the quarter: adjusted target = monthly plan.`;
+  const worst = shops.filter(s => s.met === false).sort((a, b) => b.gap - a.gap)[0];
+  document.getElementById('q-kpis').innerHTML = [
+    [`Stores on target · ${ms}`, `${t.hits}/${t.nT}`, `vs adjusted target`],
+    ['Monthly plan only', `${t.planHits}/${t.nT}`, 'if judged on the monthly plan'],
+    [`Saved by ${t.priorLabel || 'prior'} stock-in`, `${t.rescued.length}`, t.rescued.map(s => s.name).join(', ') || '—'],
+    ['Total adjusted target', fmtMoney(t.tAdj), `monthly plan ${fmtMoney(t.target)}`],
+    [`${ms} revenue`, fmtMoney(t.rev), `${fmtPct(t.ach, 0)} of adjusted target`],
+    ['Largest gap', worst ? worst.name : '—', worst ? `−${fmtMoney(worst.gap)} vs adjusted target` : ''],
+  ].map(([l, v, s]) => `<div class="chip"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+  const rows = shops.filter(s => s.target).sort((a, b) => (b.met - a.met) || (a.gap - b.gap));
+  const head = `<thead><tr><th>Store</th><th>${ms} plan</th><th>${t.qLabel} target</th><th>${t.priorLabel || '—'} revenue</th>
+    <th>Adjusted ${ms}</th><th>${ms} revenue</th><th>% of plan</th><th>% of adjusted</th><th>Gap</th><th>Status</th></tr></thead>`;
+  const status = s => (s.met ? (s.rescued ? ['good-t', `✓ Met (front-loaded ${t.priorLabel})`] : ['good-t', '✓ Met'])
+    : s.ach >= 0.9 ? ['warn-t', '≈ Close'] : ['bad-t', '✕ Below']);
+  const body = rows.map(s => {
+    const [cls, lbl] = status(s);
+    return `<tr><td><div class="shop-cell">${s.name}<span class="pill tier ${(s.tier || '').toLowerCase()}">${s.tier}</span></div></td>
+      <td>${fmtMoney(s.target)}</td><td>${fmtMoney(s.tQ)}</td><td>${fmtMoney(s.priorRev)}</td><td><b>${fmtMoney(Math.max(0, s.tAdj))}</b></td>
+      <td>${fmtMoney(s.rev)}</td><td class="${s.achM >= 1 ? 'good-t' : 'bad-t'}">${fmtPct(s.achM, 0)}</td>
+      <td class="${s.met ? 'good-t' : 'bad-t'}">${fmtAdj(s)}</td>
+      <td class="${s.gap > 0 ? 'bad-t' : 'good-t'}">${s.gap > 0 ? '−' + fmtMoney(s.gap) : '+' + fmtMoney(-s.gap)}</td>
+      <td class="${cls}">${lbl}</td></tr>`;
+  }).join('');
+  document.getElementById('q-table').innerHTML = head + `<tbody>${body}</tbody>`;
+  if (typeof Chart !== 'undefined') {
+    renderAdjustedCombo('c-quarter', 'q-legend', shops, { monthShort: ms, qLabel: t.qLabel, priorLabel: t.priorLabel, rotate: 30 });
+  }
+}
+
+// ---------- Auto-computed deeper insights for the selected month (works for any month) ----------
+
+function insightCard(kicker, big, text, tone = '') {
+  return `<div class="ins ${tone}"><div class="ins-k">${kicker}</div><div class="ins-big">${big}</div><p>${text}</p></div>`;
+}
+
+function renderAdvancedInsights(shops, t) {
+  const cards = [];
+  const names = list => list.map(s => s.name).join(', ') || '—';
+  const spent = shops.filter(s => s.adCost > 0);
+
+  // 1. Where does the money go: share of spend in stores below the adjusted target
+  const missing = spent.filter(s => s.ach != null && s.ach < 1);
+  const missSpend = missing.reduce((a, s) => a + s.adCost, 0);
+  cards.push(insightCard('Budget allocation', fmtPct(div(missSpend, t.ad), 0),
+    `of ad spend (${fmtMoney(missSpend)}) goes to <b>${missing.length} stores below adjusted target</b>: ${names(missing.sort((a, b) => b.adCost - a.adCost))}.`, 'bad'));
+
+  // 2. Best-value shops: cheaper than average per message AND on target
+  const value = spent.filter(s => s.cpm != null && s.cpm <= t.cpm && s.ach >= 1);
+  const valueSpend = value.reduce((a, s) => a + s.adCost, 0);
+  cards.push(insightCard('Best-value stores', `${value.length} stores`,
+    `Cost/Message ≤ average (${fmtMoney(t.cpm)}) and on target: <b>${names(value)}</b> — they get only ${fmtPct(div(valueSpend, t.ad), 0)} of the budget.`, 'good'));
+
+  // 3. Budget pacing vs plan
+  const over = spent.filter(s => s.budgetUse > 1.1 && s.budgetUse !== Infinity);
+  const under = spent.filter(s => s.budgetUse != null && s.budgetUse < 0.6);
+  const noPlan = spent.filter(s => s.budgetUse === Infinity);
+  cards.push(insightCard('Budget pacing', fmtPct(t.budgetUse, 0),
+    `of the ${fmtMoney(t.budget)} plan used. Over 110%: <b>${names(over)}</b>. Under 60%: <b>${names(under)}</b>.${noPlan.length ? ` Spent without a plan: <b>${names(noPlan)}</b>.` : ''}`));
+
+  // 4. Tier view
+  const tierAdj = k => { const ss = shops.filter(s => s.tier === k && s.target); return { ach: div(ss.reduce((a, s) => a + s.rev, 0), ss.reduce((a, s) => a + Math.max(0, s.tAdj), 0)), hits: ss.filter(s => s.met).length, n: ss.length }; };
+  const tiers = ['MD', 'PD', 'KA'].map(k => [k, aggregate(shops.filter(s => s.tier === k)), tierAdj(k)]).filter(([, a]) => a.shops);
+  cards.push(`<div class="ins wide"><div class="ins-k">Performance by tier</div><table class="tier-t"><thead><tr><th>Tier</th><th>Stores</th><th>Revenue</th><th>On target</th><th>Ad spend</th><th>ROAS</th><th>Cost/Msg</th></tr></thead><tbody>${tiers.map(([k, a, q]) =>
+    `<tr><td><span class="pill tier ${k.toLowerCase()}">${k}</span></td><td>${a.shops}</td><td>${fmtMoney(a.rev)}</td><td class="${q.ach >= 1 ? 'good-t' : 'bad-t'}">${q.hits}/${q.n}</td><td>${fmtMoney(a.ad)}</td><td>${fmtNum(a.roas, 1)}</td><td>${fmtMoney(a.cpm)}</td></tr>`).join('')}</tbody></table></div>`);
+
+  // 5. Paid dependency
+  const org = shops.reduce((a, s) => a + n0(s.contacts_org), 0);
+  const topOrg = [...shops].filter(s => s.contacts).sort((a, b) => n0(b.contacts_org) / b.contacts - n0(a.contacts_org) / a.contacts)[0];
+  cards.push(insightCard('Paid dependency', fmtPct(div(t.paid, t.contacts), 0),
+    `of contacts come from paid (${fmtInt(t.paid)}/${fmtInt(t.contacts)}); organic only ${fmtInt(org)}. Best organic: <b>${topOrg ? topOrg.name : '—'}</b> (${topOrg ? fmtPct(n0(topOrg.contacts_org) / topOrg.contacts, 0) : '–'}).`));
+
+  // 6. Comments that turn into messages
+  const fromCmt = shops.reduce((a, s) => a + n0(s.msg_cmt), 0);
+  const topCmt = [...shops].sort((a, b) => n0(b.msg_cmt) - n0(a.msg_cmt)).slice(0, 3);
+  cards.push(insightCard('Comment → Message', fmtInt(fromCmt),
+    `messages started from a comment (${fmtPct(div(fromCmt, t.msg), 0)} of all messages). Top: <b>${topCmt.map(s => `${s.name} ${fmtInt(s.msg_cmt)}`).join(', ')}</b> — keep comment-driving content.`));
+
+  // 7. O2O + basket
+  const o2o = shops.reduce((a, s) => a + n0(s.units_o2o), 0);
+  const o2oShops = shops.filter(s => n0(s.units_o2o) > 0).sort((a, b) => n0(b.units_o2o) - n0(a.units_o2o));
+  cards.push(insightCard('Online → Offline (O2O)', fmtInt(o2o),
+    `O2O units (${fmtPct(div(o2o, t.units), 1)} of all units) from ${o2oShops.length} stores: <b>${o2oShops.map(s => `${s.name} ${fmtInt(s.units_o2o)}`).join(', ') || '—'}</b>.`));
+
+  const aovs = shops.filter(s => s.aov).sort((a, b) => b.aov - a.aov);
+  if (aovs.length) {
+    const hi = aovs[0], lo = aovs[aovs.length - 1];
+    cards.push(insightCard('Average order value', `${fmtMoney(lo.aov, 1)} – ${fmtMoney(hi.aov, 1)}`,
+      `highest <b>${hi.name}</b>, lowest <b>${lo.name}</b>. Low-AOV stores need more orders for the same target → push message volume; high-AOV → push lead quality (5-way).`));
+  }
+
+  // 8. Deep-conversation to purchase
+  cards.push(insightCard('5-way → purchase', fmtPct(div(t.buy, t.msg5), 1),
+    `${fmtInt(t.buy)} orders from ${fmtInt(t.msg5)} 5-way conversations. Each inbox order costs ${fmtMoney(div(t.ad, t.buy))} in ads (inbox-attributed orders only).`));
+
+  document.getElementById('adv-insights').innerHTML = cards.join('');
+}
+
+// ---------- Insights: analyst notes per month (hand-written) + rule-based fallback + data-quality checks ----------
+
+// Hand-written analyst notes. Add a new key ("2026.10") each month; months without notes use autoTakeaways().
+//   overall / action : headline paragraph of the detailed takeaway section
+//   shops            : [store, tag, finding, action] cards
+//   slide            : [tag, headline, detail, action] — only the 3–4 real insights, shown on the 1-page slide
+const MONTH_NOTES = {
+  '2026.09': {
+    overall: `<b>Sep 2026:</b> ₫196.6M ad spend (−10% vs Aug) → <b>₫33.92B revenue</b> (+34%), ROAS 172.5 (Aug 115.5), CIR 0.58%.
+      <b>6/11 stores hit the adjusted target</b> (Q3 target − Jul+Aug revenue) vs only 4/11 on the monthly plan.
+      Messages −13% and Cost/Message +4% (₫19.9K), yet inbox purchases +63% (94 → 153). Đại Hồng Phát alone is 50% of revenue.`,
+    action: 'Action: move budget from BigMi & CPS to Mi360, Hotek, Danke · verify Đại Hồng Phát before closing the numbers.',
+    shops: [
+      ['Đại Hồng Phát', 'verify', '₫16.92B in Sep (484% of plan, 1,780 units vs 233) while messages −7.5% and spend −4.5% — the jump is not digital-driven.', 'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
+      ['Mi360', 'scale', 'On adjusted target (98% of monthly plan, front-loaded Jul–Aug). Lowest Cost/Message ₫12.2K, ROAS 463, but used only 21% of budget; messages −40%.', 'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
+      ['Hotek', 'scale', 'On target (134% of plan). 33 inbox orders — highest of all stores — at ₫15.0K/message; spent 19% over budget.', 'Keep and add budget; copy its inbox script to other stores.'],
+      ['Danke', 'scale', 'On target (105% of plan). Cost/Message ₫12.9K (−54% MoM) with spend −45%; 30 inbox orders, 5-way/2-way 23% (best in MD).', 'Scale with control; use as the 2-way → 5-way chat benchmark.'],
+      ['Cường Phát', 'keep', 'Only 72% of monthly plan but on adjusted target thanks to Jul–Aug. Cost/Message ₫16.0K is fine, 2-way rate only 70%.', 'Bottleneck is conversion: faster inbox replies and follow-ups.'],
+      ['Homecare', 'keep', 'On target (103% of plan) on a small ₫8.5M budget; Cost/Message ₫17.6K (−16% MoM).', 'Keep current spend.'],
+      ['Domotek', 'optimize', '88% of adjusted target — short by just ₫50M. Spend doubled, messages +157%, Cost/Message −22%, but revenue −28%.', 'More leads are not converting: check lead quality and the closing process.'],
+      ['H&T Smart Home', 'optimize', '65% of adjusted target (−₫1.23B). Cost/Message ₫24.8K, among the highest in MD; 5-way/2-way 13.5%.', 'Tighten targeting and the follow-up script to push 2-way → 5-way.'],
+      ['BigMi', 'fix', 'Largest spend ₫34.3M (17% of total) for 35% of adjusted target (−₫4.25B); ROAS 66, Cost/Message ₫24.8K, 12 inbox orders.', 'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
+      ['CPS', 'fix', 'Ran ₫21.6M with no budget plan. Cost/Message ₫48.3K (2.4× avg), CIR 2.73%, 17% of adjusted target, 0 inbox orders.', 'Cap spend; agree KPIs and the KA model before running again.'],
+      ['Giang Chi SmartHome', 'fix', 'Highest CIR 5.65%, 18% of adjusted target, Cost/Message ₫27.8K, 0 inbox orders.', 'Reduce budget or change the hero offer.'],
+    ],
+    slide: [
+      ['target', '6/11 stores on target, only 4/11 on plan',
+        'Mi360 (98% of plan) and Cường Phát (72%) front-loaded stock-in in Jul–Aug, so Sep still closes Q3. Below: BigMi, CPS, Giang Chi, H&T, Domotek (−₫50M).',
+        'Push only these 5; Domotek is one order away.'],
+      ['budget', '44% of ad spend went to stores below target',
+        'BigMi spent most (₫34.3M) for 35% of target, ROAS 66. CPS spent ₫21.6M off-plan at ₫48.3K/msg, 0 inbox orders.',
+        'Shift to Mi360: ₫12.2K/msg, only 21% of budget used.'],
+      ['funnel', 'Messages −13%, inbox purchases +63%',
+        '94 → 153 orders while Cost/Message +4% (₫19.9K). Hotek + Danke bring 41% of inbox orders at ₫12.9–15.0K/msg.',
+        'Roll out their chat script to the other stores.'],
+      ['verify', 'Đại Hồng Phát = 50% of revenue, not digital',
+        '₫16.92B, 1,780 units vs 233 target while its messages −7.5%. Excluding it: ROAS 103, CIR 0.97%.',
+        'Verify the source; report it outside digital KPIs.'],
+    ],
+    quality: ['The internal dashboard shows ROAS <b>115.82</b> · CIR <b>0.86%</b> · Cost/Message <b>₫20,813</b> — these are <b>Q3 cumulative (Jul–Sep)</b>, while Amount Spent ₫196.6M is September only. The cards mix two periods → label the period or use one filter.'],
+  },
+};
+
+const TAG_LABEL = {
+  scale: 'SCALE', fix: 'FIX', optimize: 'OPTIMIZE', verify: 'VERIFY', keep: 'MAINTAIN',
+  target: 'TARGET', budget: 'BUDGET', funnel: 'FUNNEL',
+};
+
+/** Rule-based takeaways for months that have no hand-written note. */
+function autoTakeaways(shops, t) {
+  return [...shops].sort((a, b) => b.adCost - a.adCost).map(s => {
+    let tag = 'optimize', act = 'Improve message → order conversion.';
+    if (s.achM > 2) { tag = 'verify'; act = 'Verify revenue data before closing.'; }
+    else if (s.ach >= 1 && s.cpm != null && s.cpm <= t.cpm) { tag = 'scale'; act = 'Add budget, hold Cost/Message.'; }
+    else if (s.ach >= 1) { tag = 'keep'; act = 'Maintain, optimise Cost/Message.'; }
+    else if ((s.cir != null && s.cir > 2 * t.cir) || s.ach < 0.6) { tag = 'fix'; act = 'Cut/adjust budget, review targeting & offer.'; }
+    const txt = `Adjusted target: ${fmtAdj(s)} (plan ${fmtPct(s.achM, 0)}) · spend ${fmtMoney(s.adCost)} · ROAS ${fmtNum(s.roas, 1)} · Cost/Message ${fmtMoney(s.cpm)} · ${fmtInt(s.purchase_msg)} inbox orders.`;
+    return [s.name, tag, txt, act];
+  });
+}
+
+function renderTakeaways(month, shops, t) {
+  const note = MONTH_NOTES[month];
+  const cards = note ? note.shops : autoTakeaways(shops, t);
+  const overall = note ? `${note.overall}<span class="act">${note.action}</span>`
+    : `<b>Overall:</b> ${fmtMoney(t.ad)} ad spend → ${fmtMoney(t.rev)} revenue (${t.hits}/${t.nT} stores on adjusted target), ROAS ${fmtNum(t.roas, 1)}, CIR ${fmtPct(t.cir, 2)}.`;
+  document.getElementById('takeaway-sub').textContent = note ? 'Analyst notes for this month' : 'Rule-based (no analyst notes for this month yet)';
+  document.getElementById('takeaways').innerHTML = `<div class="overall">${overall}</div><div class="tk-grid">${cards.map(([name, tag, txt, act]) => `
+    <div class="tk"><div class="tk-top"><b>${name}</b><span class="tag ${tag}">${TAG_LABEL[tag]}</span></div>
+    <p>${txt}</p><div class="act">→ ${act}</div></div>`).join('')}</div>`;
+}
+
+/** Automatic data checks — anything that would make the numbers above misleading. */
+function qualityChecks(month, shops) {
+  const out = [];
+  const prev = prevMonth(month);
+  shops.filter(s => s.achM > 2).forEach(s => out.push(`<b>${s.name}</b> at ${fmtPct(s.achM, 0)} of monthly plan (${fmtInt(s.units)} units vs target ${fmtInt(s.t_units)}) — unusual, please verify.`));
+  if (prev) {
+    const now = new Set(shops.map(s => s.shop));
+    const missing = rowsOf(prev).filter(r => !now.has(r.shop)).map(r => shortName(r.shop));
+    if (missing.length) out.push(`No data this month for <b>${missing.join(', ')}</b> (present in ${monthLabel(prev)}) — MoM totals cover different stores.`);
+  }
+  shops.filter(s => !s.budget && s.adCost > 0).forEach(s => out.push(`<b>${s.name}</b> spent ${fmtMoney(s.adCost)} on FB but its planned budget (Est. Ad Cost) is 0.`));
+  shops.filter(s => n0(s.msg2) > s.msgs && s.msgs > 0).forEach(s => out.push(`<b>${s.name}</b>: 2-way (${fmtInt(s.msg2)}) exceeds total messages (${fmtInt(s.msgs)}).`));
+  const byR2 = {};
+  shops.filter(s => s.r2 != null).forEach(s => { const k = Math.round(s.r2 * 100); (byR2[k] = byR2[k] || []).push(s.name); });
+  Object.entries(byR2).filter(([, v]) => v.length >= 4).forEach(([k, v]) => out.push(`${v.length} stores share the same 2-way rate ≈ <b>${k}%</b> (${v.join(', ')}) — possibly estimated, check the source.`));
+  quarterMonths(month).forEach(qm => rowsOf(qm).filter(r => r.target && r.revenue == null).forEach(r =>
+    out.push(`<b>${shortName(r.shop)}</b> has a ${monthLabel(qm)} target of ${fmtMoney(r.target)} but no revenue — its adjusted target this month may be overstated.`)));
+  const noSrc = shops.filter(s => !s.has_source).map(s => s.name);
+  if (noSrc.length) out.push(`<b>Source Table</b> missing for ${noSrc.length} stores: ${noSrc.join(', ')}.`);
+  return out.concat((MONTH_NOTES[month] && MONTH_NOTES[month].quality) || []);
+}
+
+function renderQuality(month, shops) {
+  const items = qualityChecks(month, shops);
+  document.getElementById('quality').innerHTML = items.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No anomalies detected.</li>';
+}
+
+// ---------- One-slide (16:9, 1600×900) executive summary at the top of the report ----------
+// Open the report with "#slide" to get only the slide at native size (used for PNG export).
+
+const SLIDE_W = 1600, SLIDE_H = 900;
+const SLIDE_ONLY = location.hash === '#slide';
+
+function renderSlide(month, shops, t) {
+  const pm = prevMonth(month);
+  const p = pm ? aggregate(rowsOf(pm)) : null;
+  const ps = pm ? monthShort(pm) : '';
+  document.getElementById('s-eyebrow').textContent = `Channel Marketing · ${monthLabel(month)}`;
+  document.getElementById('s-period').innerHTML =
+    `Monthly report · ${monthLabel(month)}${pm ? ` vs ${monthLabel(pm)}` : ''}<br><span>${t.shops} stores · FB Ads + store revenue · target adjusted to ${t.qLabel} plan</span>`;
+
+  const mom = (cur, prev, goodUp) => {
+    const d = pctChange(cur, prev);
+    if (d == null || !isFinite(d)) return '';
+    const cls = goodUp == null ? '' : (d >= 0) === goodUp ? 'up' : 'down';
+    return `<i class="${cls}">${d >= 0 ? '▲' : '▼'}${Math.abs(d * 100).toFixed(0)}%</i>`;
+  };
+  const vs = (cur, prev, fmt, goodUp) => (prev == null ? '' : `${ps}: ${fmt(prev)} ${mom(cur, prev, goodUp)}`);
+  const kpis = [
+    ['Amount Spent', fmtMoney(t.ad), vs(t.ad, p && p.ad, v => fmtMoney(v), null)],
+    ['Revenue', fmtMoney(t.rev), vs(t.rev, p && p.rev, v => fmtMoney(v), true)],
+    ['Stores on Target', `${t.hits}/${t.nT}`, `monthly plan only: ${t.planHits}/${t.nT}`],
+    ['ROAS', fmtNum(t.roas, 1), vs(t.roas, p && p.roas, v => fmtNum(v, 1), true)],
+    ['FB Messages', fmtInt(t.msg), vs(t.msg, p && p.msg, fmtInt, true)],
+    ['Cost/Message', fmtMoney(t.cpm), vs(t.cpm, p && p.cpm, v => fmtMoney(v), false)],
+  ];
+  document.getElementById('s-kpis').innerHTML = kpis.map(([l, v, s]) =>
+    `<div class="s-kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+
+  // Compact message funnel with month-over-month change per step
+  const steps = [['Messages', t.msg, p && p.msg], ['2-way', t.msg2, p && p.msg2], ['5-way', t.msg5, p && p.msg5], ['Purchases', t.buy, p && p.buy]];
+  const conv = ['', `${fmtPct(t.r2, 0)} of msg`, `${fmtPct(t.r5, 1)} of 2-way`, `${fmtPct(div(t.buy, t.msg5), 1)} of 5-way`];
+  document.getElementById('s-funnel').innerHTML = steps.map(([l, v, pv], i) => `
+    <div class="sf-row"><span class="sf-l">${l}</span>
+      <span class="sf-track"><span class="sf-bar" style="width:${Math.max(3, div(v, t.msg) * 100)}%"></span></span>
+      <span class="sf-v">${fmtInt(v)} ${mom(v, pv, true)}<em>${conv[i]}</em></span></div>`).join('');
+
+  // Key takeaways: hand-written insight blocks [tag, headline, detail, action], else the top auto cards
+  const note = MONTH_NOTES[month];
+  const items = note && note.slide ? note.slide
+    : autoTakeaways(shops, t).slice(0, 4).map(([n, tag, txt, act]) => [tag, n, txt, act]);
+  document.getElementById('s-takeaway').innerHTML = items.map(([tag, head, txt, act], i) => `
+    <div class="st"><div class="st-top"><span class="st-n">${i + 1}</span><span class="tag ${tag}">${TAG_LABEL[tag] || tag}</span><b>${head}</b></div>
+      <p>${txt}</p><div class="st-act">→ ${act}</div></div>`).join('');
+
+  if (typeof Chart === 'undefined') return;
+  renderSlideCharts(month, shops, t);
+}
+
+const slideName = n => n.replace(/\s*Smart\s?Home$/i, ''); // keep x labels short on the slide
+
+function renderSlideCharts(month, shops, t) {
+  const C = themeColors();
+  // A. Month revenue vs month target adjusted to the quarter plan
+  renderAdjustedCombo('s-c-target', 's-t-legend', shops,
+    { monthShort: monthShort(month), qLabel: t.qLabel, priorLabel: t.priorLabel, shortNames: true });
+
+  // B. Spent & ROAS by store
+  const bySpend = [...shops].sort((a, b) => b.adCost - a.adCost);
+  makeCombo('s-c-spend', {
+    labels: bySpend.map(s => slideName(s.name)), rotate: 30, minSlot: 30, barMax: 34, title: i => bySpend[i].name, hideY1: true,
+    bars: [{ label: 'Ad spend', data: bySpend.map(s => s.adCost), color: C.brand, _label: v => Math.round(v / 1e6) + 'M' }],
+    lines: [{ label: 'ROAS', data: bySpend.map(s => s.roas), color: C.line, _label: v => fmtNum(v, 0) }],
+    yFmt: v => fmtMoney(v, 0), y1Fmt: v => v, tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) },
+  });
+
+  // C. Messages & Cost/Message by store
+  const byMsg = [...shops].sort((a, b) => b.msgs - a.msgs);
+  makeCombo('s-c-msg', {
+    labels: byMsg.map(s => slideName(s.name)), rotate: 30, minSlot: 30, barMax: 34, title: i => byMsg[i].name, hideY1: true,
+    bars: [{ label: 'FB Messages', data: byMsg.map(s => s.msgs), color: C.brand, _label: v => (v >= 1000 ? (v / 1000).toFixed(1) + 'K' : fmtInt(v)) }],
+    lines: [{ label: 'Cost/Message', data: byMsg.map(s => s.cpm), color: C.line, _label: v => fmtMoney(v, 1) }],
+    yFmt: v => fmtInt(v), y1Fmt: v => fmtMoney(v, 0), tipFmt: { 'FB Messages': fmtInt, 'Cost/Message': v => fmtMoney(v) },
+  });
+}
+
+/** Scale the fixed 1600×900 slide to the available width (on-page view only). */
+function fitSlide() {
+  const wrap = document.getElementById('slide-wrap'), slide = document.getElementById('slide');
+  if (!wrap || SLIDE_ONLY) return;
+  const k = Math.min(1, wrap.clientWidth / SLIDE_W);
+  slide.style.transform = `scale(${k})`;
+  wrap.style.height = SLIDE_H * k + 'px';
+}
+window.addEventListener('resize', fitSlide);
+
+// ---------- Bootstrap: month picker, theme toggle, render everything for the selected month ----------
+
+const state = { month: MONTHS[MONTHS.length - 1] };
+
+function renderAll() {
+  const m = state.month;
+  const shops = rowsOf(m).map(shopMetrics);
+  const t = aggregate(shops.map(s => s));
+  attachAdjustedTarget(shops, t, m); // month target adjusted by what the quarter still needs
+  const pm = prevMonth(m);
+  const p = pm ? aggregate(rowsOf(pm)) : null;
+
+  if (typeof Chart !== 'undefined') {
+    applyChartDefaults(themeColors()); // before any chart (slide/quarter render early)
+    if (SLIDE_ONLY) Chart.defaults.animation = false; // static frame for PNG export
+  }
+  renderHero(m, t);
+  renderSlide(m, shops, t);
+  fitSlide();
+  renderKpis(t, p);
+  renderConcentrationAlert(shops, t);
+  renderBullet(shops);
+  renderFunnel(t, shops);
+  renderAdjustedSection(m, shops, t);
+  renderMatrix(shops, t, pm ? rowsOf(pm) : []);
+  renderCharts(shops, t);
+  renderAdvancedInsights(shops, t);
+  renderTakeaways(m, shops, t);
+  renderQuality(m, shops);
+  document.getElementById('foot').innerHTML =
+    `Source: CM – Monthly Report (data_media) · ${monthLabel(m)} vs ${pm ? monthLabel(pm) : '—'} · ` +
+    'ROAS = revenue ÷ FB ad cost · CIR = FB ad cost ÷ revenue · Cost/Message = FB ad cost ÷ FB messages · ' +
+    'Adjusted target = quarter target − revenue booked in earlier months of the quarter · ' +
+    'All total ratios are sum ÷ sum (never an average of store ratios).';
+}
+
+function renderCharts(shops, t) {
+  if (typeof Chart === 'undefined') return; // offline: HTML sections still render
+  renderShopCombos(shops);
+  renderTrendCharts(state.month);
+  renderQuadrant(shops, t);
+  renderEngagement(shops);
+}
+
+function initControls() {
+  const sel = document.getElementById('month-select');
+  sel.innerHTML = [...MONTHS].reverse().map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
+  sel.value = state.month;
+  sel.addEventListener('change', () => { state.month = sel.value; renderAll(); });
+
+  const root = document.documentElement;
+  try { const saved = localStorage.getItem('dp-theme'); if (saved) root.dataset.theme = saved; } catch (e) { /* storage blocked */ }
+  document.getElementById('theme-btn').addEventListener('click', () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('dp-theme', root.dataset.theme); } catch (e) { /* ignore */ }
+    renderAll();
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!root.dataset.theme) renderAll(); });
+}
+
+initControls();
+if (SLIDE_ONLY) { document.body.classList.add('slide-only'); document.documentElement.dataset.theme = 'light'; } // slides are always light
+renderAll();
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CM Digital Performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+/*@@CSS@@*/
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <p class="hero-sub" id="hero-sub"></p>
+      <div class="hero-controls">
+        <label class="month-pick">
+          <span>Report month</span>
+          <select id="month-select" aria-label="Select report month"></select>
+        </label>
+        <button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle light/dark theme">◐</button>
+      </div>
+    </header>
+
+    <section class="slide-wrap" id="slide-wrap" aria-label="Summary slide">
+      <div class="slide" id="slide">
+        <header class="s-head">
+          <div><div class="s-eyebrow" id="s-eyebrow">Channel Marketing</div><h1>Digital Performance</h1></div>
+          <div class="s-period" id="s-period"></div>
+        </header>
+        <div class="s-kpis" id="s-kpis"></div>
+        <div class="s-body">
+          <div class="s-left">
+            <div class="s-panel s-a">
+              <h3>Monthly Revenue vs Adjusted Target by Store</h3>
+              <div class="s-legend" id="s-t-legend"></div>
+              <div class="s-chart"><canvas id="s-c-target"></canvas></div>
+            </div>
+            <div class="s-row">
+              <div class="s-panel">
+                <h3>Spent & ROAS by Store</h3>
+                <div class="s-legend"><span><i class="sw s1"></i>Ad spend (FB)</span><span><i class="sw ln line"></i>ROAS</span></div>
+                <div class="s-chart"><canvas id="s-c-spend"></canvas></div>
+              </div>
+              <div class="s-panel">
+                <h3>Messages & Cost/Message by Store</h3>
+                <div class="s-legend"><span><i class="sw s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div>
+                <div class="s-chart"><canvas id="s-c-msg"></canvas></div>
+              </div>
+            </div>
+          </div>
+          <div class="s-right">
+            <div class="s-panel s-fn"><h3>Message Funnel</h3><div id="s-funnel"></div></div>
+            <div class="s-panel s-tk"><h3>Key Takeaway</h3><div id="s-takeaway"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-title detail-title">
+      <h2>Details</h2>
+      <p>Full monthly figures · hover or tap a chart to see values</p>
+    </section>
+    <section class="kpi-hero" id="kpi-hero" aria-label="Main KPIs"></section>
+    <section class="kpi-strip" id="kpi-strip" aria-label="Secondary KPIs"></section>
+    <section id="alert-slot"></section>
+
+    <section class="grid">
+      <article class="card span-7">
+        <div class="card-head">
+          <h2>Adjusted Target Achievement by Store</h2>
+          <p>Month revenue ÷ adjusted target (quarter target − earlier months) · black tick = 100%</p>
+        </div>
+        <div id="bullet" class="bullet"></div>
+      </article>
+      <article class="card span-5">
+        <div class="card-head">
+          <h2>Message Funnel</h2>
+          <p>Messages → 2-way → 5-way → purchase</p>
+        </div>
+        <div id="funnel" class="funnel"></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2 id="q-title">Adjusted target</h2>
+      <p id="q-note"></p>
+    </section>
+    <section class="kpi-strip q" id="q-kpis"></section>
+    <section class="grid">
+      <article class="card span-12">
+        <div class="card-head"><h2>Monthly Revenue vs Adjusted Target</h2><p>Dark bar = met · light bar = below · black tick = adjusted target · grey tick = monthly plan</p></div>
+        <div class="legend-row" id="q-legend"></div>
+        <div class="chart-box tall"><canvas id="c-quarter"></canvas></div>
+      </article>
+      <article class="card span-12">
+        <div class="card-head"><h2>Target Scorecard</h2><p>Monthly plan vs adjusted target · gap to adjusted target</p></div>
+        <div class="table-wrap"><table class="matrix qtable" id="q-table"></table></div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-12">
+        <div class="card-head row">
+          <div>
+            <h2>Store Performance Table</h2>
+            <p>Click a column header to sort · bar = relative size within the column</p>
+          </div>
+          <div class="legend-inline"><span class="pill tier">MD</span><span class="pill tier pd">PD</span><span class="pill tier ka">KA</span></div>
+        </div>
+        <div class="table-wrap"><table class="matrix" id="matrix"></table></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2>Performance by Store</h2>
+      <p>Bars = left axis · lines = right axis · sorted by ad spend</p>
+    </section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>Spent & ROAS by Store</h3><p>FB ad spend and ROAS per store</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-spend-roas"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Ad Cost vs Cost/Message vs Cost/Comment</h3><p>Cost per message / comment · “↑” = off scale</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>FB Ad Cost</span><span><i class="sw ln line"></i>Cost/Message</span><span><i class="sw ln line2"></i>Cost/Comment</span></div><div class="chart-box combo"><canvas id="c-cost-msg-cmt"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Sale Units & AOV</h3><p>Units sold and average order value</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Sale units</span><span><i class="sw ln line"></i>AOV</span></div><div class="chart-box combo"><canvas id="c-aov-units"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Paid vs Organic Contacts</h3><p>Contact sources and % organic</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Paid</span><span><i class="sw  s2"></i>Organic</span><span><i class="sw ln line"></i>% Organic</span></div><div class="chart-box combo"><canvas id="c-contacts"></canvas></div></article>
+    </section>
+
+    <section class="section-title">
+      <h2>Month-over-Month Trends</h2>
+      <p id="trend-note"></p>
+    </section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. CIR%</h3><p>Revenue and % CIR by month</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln line"></i>% CIR</span></div><div class="chart-box combo"><canvas id="c-rev-cir"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Message vs. Cost/Message</h3><p>FB messages and cost per message</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div><div class="chart-box combo"><canvas id="c-msg-cpm"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Ad Spend vs. ROAS</h3><p>Ad spend and ROAS</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-ad-roas"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. Target</h3><p>Bar label = % of monthly plan</p></div>
+        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln ink"></i>Target</span></div><div class="chart-box combo"><canvas id="c-rev-target"></canvas></div></article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-7">
+        <div class="card-head">
+          <h2>Efficiency Matrix: Cost/Message × Target</h2>
+          <p>Bubble size = ad spend · dividers = overall Cost/Message and 100% of adjusted target</p>
+        </div>
+        <div class="chart-box tall"><canvas id="c-quad"></canvas></div>
+      </article>
+      <article class="card span-5">
+        <div class="card-head">
+          <h2>FB Comments & Followers</h2>
+          <p>Fanpage engagement by store</p>
+        </div>
+        <div class="legend-row">
+          <span><i class="sw s1"></i>Comments</span><span><i class="sw s2"></i>New followers</span>
+        </div>
+        <div class="chart-box tall"><canvas id="c-eng"></canvas></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2>Deeper Insights</h2>
+      <p>Computed from the selected month</p>
+    </section>
+    <section class="ins-grid" id="adv-insights"></section>
+
+    <section class="grid">
+      <article class="card span-8 takeaway">
+        <div class="card-head"><h2>Key Takeaway & Action</h2><p id="takeaway-sub"></p></div>
+        <div id="takeaways"></div>
+      </article>
+      <article class="card span-4 quality">
+        <div class="card-head"><h2>Data Quality</h2><p>Check these before closing the numbers</p></div>
+        <ul id="quality"></ul>
+      </article>
+    </section>
+
+    <footer class="foot" id="foot"></footer>
+  </div>
+  <div class="tip" id="tip" role="tooltip"></div>
+
+  <script>
+const RAW_ROWS = /*@@DATA@@*/;
+/*@@JS@@*/
+  </script>
+</body>
+</html>
