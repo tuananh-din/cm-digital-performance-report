@@ -6,8 +6,9 @@
   <title>CM Digital Performance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <style>
 /*@@CSS@@*/
   </style>
@@ -17,6 +18,14 @@
     <header class="toolbar">
       <p class="hero-sub" id="hero-sub"></p>
       <div class="hero-controls">
+        <div class="export-box">
+          <span class="export-label">Summary slide</span>
+          <div class="export-btns">
+            <button class="exp-btn primary" id="btn-png" type="button" title="Download the slide as a 3200×1800 PNG">⬇ Download PNG</button>
+            <button class="exp-btn" id="btn-copy" type="button" title="Copy the slide image to the clipboard">⧉ Copy PNG</button>
+          </div>
+          <span class="export-status" id="export-status" role="status" aria-live="polite"></span>
+        </div>
         <label class="month-pick">
           <span>Report month</span>
           <select id="month-select" aria-label="Select report month"></select>

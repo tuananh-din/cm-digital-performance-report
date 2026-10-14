@@ -6,8 +6,9 @@
   <title>CM Digital Performance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <style>
 /* Digital Performance monthly report — tokens first, light + dark (OS or toggle). */
 :root {
@@ -282,6 +283,7 @@ select:focus-visible, button:focus-visible, th:focus-visible { outline: 3px soli
 .s-panel h3 { font-size: 19px; font-weight: 700; letter-spacing: -.01em; text-align: center; }
 .s-legend { display: flex; justify-content: center; gap: 14px; font-size: 12px; color: var(--ink-2); margin: 3px 0 2px; flex-wrap: wrap; }
 .s-chart { position: relative; flex: 1; min-height: 0; }
+.s-chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; } /* fixed-size slide charts read this layout size */
 .s-fn #s-funnel { display: grid; gap: 5px; margin-top: 6px; }
 .sf-row { display: grid; grid-template-columns: 100px 1fr 196px; align-items: center; gap: 10px; font-size: 13px; }
 .sf-l { text-align: right; color: var(--ink-2); font-weight: 600; }
@@ -308,6 +310,19 @@ body.slide-only .page > :not(#slide-wrap) { display: none; }
 body.slide-only .slide-wrap { width: 1600px; height: 900px; margin: 0; }
 body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 
+/* ---------- slide export buttons ---------- */
+.export-box { display: grid; gap: 6px; position: relative; }
+.export-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.export-btns { display: flex; gap: 8px; }
+.exp-btn { font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; padding: 0 14px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink); box-shadow: var(--shadow); white-space: nowrap; }
+.exp-btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.exp-btn:hover { filter: brightness(.96); }
+.exp-btn:disabled { opacity: .6; cursor: progress; }
+.export-status { position: absolute; top: 100%; left: 0; margin-top: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.export-status.ok { color: var(--good); } .export-status.err { color: var(--bad); }
+@media (max-width: 640px) { .hero-controls { flex-wrap: wrap; } .exp-btn { font-size: 13px; padding: 0 10px; } }
+
   </style>
 </head>
 <body>
@@ -315,6 +330,14 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
     <header class="toolbar">
       <p class="hero-sub" id="hero-sub"></p>
       <div class="hero-controls">
+        <div class="export-box">
+          <span class="export-label">Summary slide</span>
+          <div class="export-btns">
+            <button class="exp-btn primary" id="btn-png" type="button" title="Download the slide as a 3200×1800 PNG">⬇ Download PNG</button>
+            <button class="exp-btn" id="btn-copy" type="button" title="Copy the slide image to the clipboard">⧉ Copy PNG</button>
+          </div>
+          <span class="export-status" id="export-status" role="status" aria-live="polite"></span>
+        </div>
         <label class="month-pick">
           <span>Report month</span>
           <select id="month-select" aria-label="Select report month"></select>
@@ -851,9 +874,12 @@ function makeCombo(id, spec) {
   const hasY1 = lines.some(l => l.yAxisID === 'y1');
   // Float right-axis lines in the upper band of the plot (negative, hidden min) so line pills sit above bar-foot labels.
   const y1Max = Math.max(0, ...lines.filter(l => l.yAxisID === 'y1').flatMap(l => l.data.filter(v => v != null && isFinite(v))));
+  // Charts inside the 1600×900 slide are drawn at 2× so the PNG export stays crisp on 1× screens.
+  const inSlide = !!(document.getElementById(id) || { closest: () => null }).closest('.slide');
   makeChart(id, {
     data: { labels: spec.labels, datasets: [...lines, ...bars] },
     options: {
+      ...(inSlide ? { devicePixelRatio: 2 } : {}),
       layout: { padding: { top: 22 } },
       interaction: { mode: 'index', intersect: false },
       scales: {
@@ -1431,6 +1457,89 @@ function fitSlide() {
 }
 window.addEventListener('resize', fitSlide);
 
+// ---------- Export the 16:9 summary slide as PNG (download or copy to clipboard) ----------
+// Uses html-to-image (SVG foreignObject → canvas) so every CSS feature renders exactly as on screen.
+// The slide is always exported in the light theme at native 1600×900, pixel ratio 2 (3200×1800).
+
+let EXPORTING = false; // read by renderAll(): disables chart animation so the frame is final
+let FONT_CSS = null;    // cached @font-face CSS with the font files inlined as data URLs
+
+/** Inline the Google Font into CSS ourselves (an SVG-rendered image cannot reach the page's web fonts). */
+async function slideFontCSS() {
+  if (FONT_CSS !== null) return FONT_CSS;
+  try {
+    const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
+    let css = await (await fetch(link.href)).text();
+    const urls = [...new Set(css.match(/https:\/\/fonts\.gstatic\.com\/[^)'"\s]+/g) || [])];
+    const inlined = await Promise.all(urls.map(async u => {
+      const blob = await (await fetch(u)).blob();
+      return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res([u, fr.result]); fr.onerror = rej; fr.readAsDataURL(blob); });
+    }));
+    inlined.forEach(([u, data]) => { css = css.split(u).join(data); });
+    FONT_CSS = css;
+  } catch (e) {
+    FONT_CSS = ''; // fall back to system fonts rather than failing the export
+  }
+  return FONT_CSS;
+}
+
+async function renderSlidePng() {
+  if (typeof htmlToImage === 'undefined') throw new Error('Image library not loaded (offline?)');
+  const root = document.documentElement;
+  const prevTheme = root.dataset.theme;
+  const prevAnim = Chart.defaults.animation;
+  const wasDark = prevTheme ? prevTheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  EXPORTING = true;
+  try {
+    if (wasDark) root.dataset.theme = 'light';
+    renderAll();
+    await document.fonts.ready;
+    const fontEmbedCSS = await slideFontCSS();
+    return await htmlToImage.toBlob(document.getElementById('slide'), {
+      width: SLIDE_W, height: SLIDE_H, pixelRatio: 2, cacheBust: true, fontEmbedCSS,
+      style: { transform: 'none', borderRadius: '0', boxShadow: 'none', border: '0' },
+    });
+  } finally {
+    EXPORTING = false;
+    if (wasDark) { if (prevTheme) root.dataset.theme = prevTheme; else delete root.dataset.theme; }
+    Chart.defaults.animation = prevAnim;
+    renderAll();
+  }
+}
+
+function exportStatus(msg, ok = true) {
+  const el = document.getElementById('export-status');
+  el.textContent = msg;
+  el.className = 'export-status ' + (ok ? 'ok' : 'err');
+  clearTimeout(exportStatus.t);
+  exportStatus.t = setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+async function withBusy(btn, fn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try { await fn(); } catch (e) { exportStatus(`Export failed: ${e.message || e}`, false); } finally { btn.disabled = false; }
+}
+
+function initSlideExport() {
+  const dl = document.getElementById('btn-png'), cp = document.getElementById('btn-copy');
+  dl.addEventListener('click', () => withBusy(dl, async () => {
+    const blob = await renderSlidePng();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `CM-Digital-Performance-${state.month.replace('.', '-')}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    exportStatus('PNG downloaded ✓');
+  }));
+  cp.addEventListener('click', () => withBusy(cp, async () => {
+    if (!navigator.clipboard || typeof ClipboardItem === 'undefined') throw new Error('clipboard not supported here — use Download');
+    // Pass the promise straight into ClipboardItem so Safari keeps the click's user activation.
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': renderSlidePng() })]);
+    exportStatus('Copied — paste into your slide (Ctrl/⌘+V) ✓');
+  }));
+}
+
 // ---------- Bootstrap: month picker, theme toggle, render everything for the selected month ----------
 
 const state = { month: MONTHS[MONTHS.length - 1] };
@@ -1445,9 +1554,12 @@ function renderAll() {
 
   if (typeof Chart !== 'undefined') {
     applyChartDefaults(themeColors()); // before any chart (slide/quarter render early)
-    if (SLIDE_ONLY) Chart.defaults.animation = false; // static frame for PNG export
+    if (SLIDE_ONLY || EXPORTING) Chart.defaults.animation = false; // static frame for PNG export
   }
   renderHero(m, t);
+  // Chart.js measures its box with getBoundingClientRect on creation, which includes CSS transforms:
+  // unscale the slide while its charts are built, then scale it back to fit the page.
+  document.getElementById('slide').style.transform = 'none';
   renderSlide(m, shops, t);
   fitSlide();
   renderKpis(t, p);
@@ -1493,6 +1605,7 @@ function initControls() {
 }
 
 initControls();
+initSlideExport();
 if (SLIDE_ONLY) { document.body.classList.add('slide-only'); document.documentElement.dataset.theme = 'light'; } // slides are always light
 renderAll();
 

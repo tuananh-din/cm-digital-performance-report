@@ -12,9 +12,12 @@ function renderAll() {
 
   if (typeof Chart !== 'undefined') {
     applyChartDefaults(themeColors()); // before any chart (slide/quarter render early)
-    if (SLIDE_ONLY) Chart.defaults.animation = false; // static frame for PNG export
+    if (SLIDE_ONLY || EXPORTING) Chart.defaults.animation = false; // static frame for PNG export
   }
   renderHero(m, t);
+  // Chart.js measures its box with getBoundingClientRect on creation, which includes CSS transforms:
+  // unscale the slide while its charts are built, then scale it back to fit the page.
+  document.getElementById('slide').style.transform = 'none';
   renderSlide(m, shops, t);
   fitSlide();
   renderKpis(t, p);
@@ -60,5 +63,6 @@ function initControls() {
 }
 
 initControls();
+initSlideExport();
 if (SLIDE_ONLY) { document.body.classList.add('slide-only'); document.documentElement.dataset.theme = 'light'; } // slides are always light
 renderAll();

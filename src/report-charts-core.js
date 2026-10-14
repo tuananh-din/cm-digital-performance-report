@@ -108,9 +108,12 @@ function makeCombo(id, spec) {
   const hasY1 = lines.some(l => l.yAxisID === 'y1');
   // Float right-axis lines in the upper band of the plot (negative, hidden min) so line pills sit above bar-foot labels.
   const y1Max = Math.max(0, ...lines.filter(l => l.yAxisID === 'y1').flatMap(l => l.data.filter(v => v != null && isFinite(v))));
+  // Charts inside the 1600×900 slide are drawn at 2× so the PNG export stays crisp on 1× screens.
+  const inSlide = !!(document.getElementById(id) || { closest: () => null }).closest('.slide');
   makeChart(id, {
     data: { labels: spec.labels, datasets: [...lines, ...bars] },
     options: {
+      ...(inSlide ? { devicePixelRatio: 2 } : {}),
       layout: { padding: { top: 22 } },
       interaction: { mode: 'index', intersect: false },
       scales: {

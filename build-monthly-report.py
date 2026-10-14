@@ -22,7 +22,7 @@ CHROME_CANDIDATES = [
 ]
 JS_ORDER = [
     "report-data-utils.js", "report-sections-render.js", "report-charts-core.js", "report-charts-trend.js",
-    "report-charts-shop.js", "report-adjusted-target.js", "report-advanced-insights.js", "report-insights.js", "report-slide-summary.js", "report-main.js",
+    "report-charts-shop.js", "report-adjusted-target.js", "report-advanced-insights.js", "report-insights.js", "report-slide-summary.js", "report-slide-export.js", "report-main.js",
 ]
 
 # report field -> CSV column
