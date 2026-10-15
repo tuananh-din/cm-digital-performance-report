@@ -5,7 +5,7 @@ function insightCard(kicker, big, text, tone = '') {
 }
 
 function renderAdvancedInsights(shops, t) {
-  const cards = [];
+  const cards = [], dig = []; // cards → business grid, dig → digital grid
   const names = list => list.map(s => s.name).join(', ') || '—';
   const spent = shops.filter(s => s.adCost > 0);
 
@@ -20,6 +20,13 @@ function renderAdvancedInsights(shops, t) {
   const valueSpend = value.reduce((a, s) => a + s.adCost, 0);
   cards.push(insightCard('Best-value stores', `${value.length} stores`,
     `Cost/Message ≤ average (${fmtMoney(t.cpm)}) and on target: <b>${names(value)}</b> — they get only ${fmtPct(div(valueSpend, t.ad), 0)} of the budget.`, 'good'));
+
+  // 2b. Momentum: stores that met the adjusted target only thanks to earlier months
+  if (t.momentum) {
+    const slowing = t.momentum.filter(r => r.signal === 'slowing');
+    cards.push(insightCard('Momentum check', `${slowing.length} of ${t.hits}`,
+      `on-target stores are <b>slowing</b> vs the previous two months: <b>${slowing.map(r => `${r.s.name} ${r.chg != null ? (r.chg * 100).toFixed(0) + '%' : ''}`).join(', ') || '—'}</b>. They met target thanks to earlier stock-in — next quarter needs a fresh push.`, slowing.length ? 'bad' : 'good'));
+  }
 
   // 3. Budget pacing vs plan
   const over = spent.filter(s => s.budgetUse > 1.1 && s.budgetUse !== Infinity);
@@ -37,19 +44,19 @@ function renderAdvancedInsights(shops, t) {
   // 5. Paid dependency
   const org = shops.reduce((a, s) => a + n0(s.contacts_org), 0);
   const topOrg = [...shops].filter(s => s.contacts).sort((a, b) => n0(b.contacts_org) / b.contacts - n0(a.contacts_org) / a.contacts)[0];
-  cards.push(insightCard('Paid dependency', fmtPct(div(t.paid, t.contacts), 0),
+  dig.push(insightCard('Paid dependency', fmtPct(div(t.paid, t.contacts), 0),
     `of contacts come from paid (${fmtInt(t.paid)}/${fmtInt(t.contacts)}); organic only ${fmtInt(org)}. Best organic: <b>${topOrg ? topOrg.name : '—'}</b> (${topOrg ? fmtPct(n0(topOrg.contacts_org) / topOrg.contacts, 0) : '–'}).`));
 
   // 6. Comments that turn into messages
   const fromCmt = shops.reduce((a, s) => a + n0(s.msg_cmt), 0);
   const topCmt = [...shops].sort((a, b) => n0(b.msg_cmt) - n0(a.msg_cmt)).slice(0, 3);
-  cards.push(insightCard('Comment → Message', fmtInt(fromCmt),
+  dig.push(insightCard('Comment → Message', fmtInt(fromCmt),
     `messages started from a comment (${fmtPct(div(fromCmt, t.msg), 0)} of all messages). Top: <b>${topCmt.map(s => `${s.name} ${fmtInt(s.msg_cmt)}`).join(', ')}</b> — keep comment-driving content.`));
 
   // 7. O2O + basket
   const o2o = shops.reduce((a, s) => a + n0(s.units_o2o), 0);
   const o2oShops = shops.filter(s => n0(s.units_o2o) > 0).sort((a, b) => n0(b.units_o2o) - n0(a.units_o2o));
-  cards.push(insightCard('Online → Offline (O2O)', fmtInt(o2o),
+  dig.push(insightCard('Online → Offline (O2O)', fmtInt(o2o),
     `O2O units (${fmtPct(div(o2o, t.units), 1)} of all units) from ${o2oShops.length} stores: <b>${o2oShops.map(s => `${s.name} ${fmtInt(s.units_o2o)}`).join(', ') || '—'}</b>.`));
 
   const aovs = shops.filter(s => s.aov).sort((a, b) => b.aov - a.aov);
@@ -60,8 +67,9 @@ function renderAdvancedInsights(shops, t) {
   }
 
   // 8. Deep-conversation to purchase
-  cards.push(insightCard('5-way → purchase', fmtPct(div(t.buy, t.msg5), 1),
+  dig.push(insightCard('5-way → purchase', fmtPct(div(t.buy, t.msg5), 1),
     `${fmtInt(t.buy)} orders from ${fmtInt(t.msg5)} 5-way conversations. Each inbox order costs ${fmtMoney(div(t.ad, t.buy))} in ads (inbox-attributed orders only).`));
 
-  document.getElementById('adv-insights').innerHTML = cards.join('');
+  document.getElementById('biz-insights').innerHTML = cards.join('');
+  document.getElementById('dig-insights').innerHTML = dig.join('');
 }

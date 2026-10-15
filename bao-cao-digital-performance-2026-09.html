@@ -323,6 +323,22 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 .export-status.ok { color: var(--good); } .export-status.err { color: var(--bad); }
 @media (max-width: 640px) { .hero-controls { flex-wrap: wrap; } .exp-btn { font-size: 13px; padding: 0 10px; } }
 
+/* ---------- business-first parts, momentum table ---------- */
+.part-title { display: flex; align-items: center; gap: 14px; margin: 34px 0 14px; padding-top: 18px; border-top: 2px solid var(--border); }
+.part-n { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 20px; font-weight: 800; display: grid; place-items: center; }
+.part-title h2 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.part-title p { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.kpi-strip.m { grid-template-columns: repeat(4, 1fr); margin-top: 0; }
+.chip .lbl.good-t, .chip .lbl.warn-t, .chip .lbl.bad-t { font-weight: 800; }
+.mtable { min-width: 860px; }
+.mtable td:nth-child(n+2) { text-align: right; }
+.spark { width: 54px; height: 22px; vertical-align: middle; }
+.spark rect { fill: var(--q1); } .spark rect.cur { fill: var(--brand); }
+.ins-grid.inner { grid-template-columns: repeat(2, 1fr); margin: 0; }
+.ins-grid.inner .ins { box-shadow: none; background: var(--surface-2); }
+@media (max-width: 1100px) { .kpi-strip.m { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .ins-grid.inner { grid-template-columns: 1fr; } .part-title h2 { font-size: 22px; } }
+
   </style>
 </head>
 <body>
@@ -381,30 +397,12 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
       </div>
     </section>
 
-    <section class="section-title detail-title">
-      <h2>Details</h2>
-      <p>Full monthly figures · hover or tap a chart to see values</p>
+    <section class="part-title">
+      <span class="part-n">1</span>
+      <div><h2>Business Performance</h2><p>Did the brand get its money's worth? Sell-in vs target, marketing cost vs revenue, store momentum.</p></div>
     </section>
-    <section class="kpi-hero" id="kpi-hero" aria-label="Main KPIs"></section>
-    <section class="kpi-strip" id="kpi-strip" aria-label="Secondary KPIs"></section>
+    <section class="kpi-hero" id="kpi-hero" aria-label="Business KPIs"></section>
     <section id="alert-slot"></section>
-
-    <section class="grid">
-      <article class="card span-7">
-        <div class="card-head">
-          <h2>Adjusted Target Achievement by Store</h2>
-          <p>Month revenue ÷ adjusted target (quarter target − earlier months) · black tick = 100%</p>
-        </div>
-        <div id="bullet" class="bullet"></div>
-      </article>
-      <article class="card span-5">
-        <div class="card-head">
-          <h2>Message Funnel</h2>
-          <p>Messages → 2-way → 5-way → purchase</p>
-        </div>
-        <div id="funnel" class="funnel"></div>
-      </article>
-    </section>
 
     <section class="section-title">
       <h2 id="q-title">Adjusted target</h2>
@@ -423,6 +421,33 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
       </article>
     </section>
 
+    <section class="section-title">
+      <h2>Store Momentum · last 3 months</h2>
+      <p id="m-note"></p>
+    </section>
+    <section class="kpi-strip m" id="m-kpis"></section>
+    <section class="grid">
+      <article class="card span-12">
+        <div class="card-head"><h2>Who is on target — and who is slowing down</h2><p>Bars = sell-in per month (current month solid) · signal combines adjusted-target status with the 3-month trend</p></div>
+        <div class="table-wrap"><table class="matrix mtable" id="momentum"></table></div>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <h2>Business Efficiency</h2>
+      <p>Where the marketing budget went and what it returned (sell-in basis) · <span id="trend-note"></span></p>
+    </section>
+    <section class="ins-grid" id="biz-insights"></section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. Target</h3><p>Bar label = % of monthly plan</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Revenue</span><span><i class="sw ln ink"></i>Target</span></div><div class="chart-box combo"><canvas id="c-rev-target"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. CIR%</h3><p>Sell-in revenue and % CIR by month</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Revenue</span><span><i class="sw ln line"></i>% CIR</span></div><div class="chart-box combo"><canvas id="c-rev-cir"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>MoM Ad Spend vs. ROAS</h3><p>Marketing cost and ROAS (sell-in ÷ cost)</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-ad-roas"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Spent & ROAS by Store</h3><p>FB ad spend and ROAS per store</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-spend-roas"></canvas></div></article>
+    </section>
     <section class="grid">
       <article class="card span-12">
         <div class="card-head row">
@@ -436,37 +461,19 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
       </article>
     </section>
 
-    <section class="section-title">
-      <h2>Performance by Store</h2>
-      <p>Bars = left axis · lines = right axis · sorted by ad spend</p>
+    <section class="part-title">
+      <span class="part-n">2</span>
+      <div><h2>Digital Performance</h2><p>How efficiently Facebook Ads turned budget into conversations and orders.</p></div>
     </section>
+    <section class="kpi-strip" id="kpi-strip" aria-label="Digital KPIs"></section>
     <section class="grid">
-      <article class="card span-6"><div class="card-head"><h3>Spent & ROAS by Store</h3><p>FB ad spend and ROAS per store</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-spend-roas"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>Ad Cost vs Cost/Message vs Cost/Comment</h3><p>Cost per message / comment · “↑” = off scale</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>FB Ad Cost</span><span><i class="sw ln line"></i>Cost/Message</span><span><i class="sw ln line2"></i>Cost/Comment</span></div><div class="chart-box combo"><canvas id="c-cost-msg-cmt"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>Sale Units & AOV</h3><p>Units sold and average order value</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Sale units</span><span><i class="sw ln line"></i>AOV</span></div><div class="chart-box combo"><canvas id="c-aov-units"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>Paid vs Organic Contacts</h3><p>Contact sources and % organic</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Paid</span><span><i class="sw  s2"></i>Organic</span><span><i class="sw ln line"></i>% Organic</span></div><div class="chart-box combo"><canvas id="c-contacts"></canvas></div></article>
-    </section>
-
-    <section class="section-title">
-      <h2>Month-over-Month Trends</h2>
-      <p id="trend-note"></p>
-    </section>
-    <section class="grid">
-      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. CIR%</h3><p>Revenue and % CIR by month</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln line"></i>% CIR</span></div><div class="chart-box combo"><canvas id="c-rev-cir"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>MoM Message vs. Cost/Message</h3><p>FB messages and cost per message</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div><div class="chart-box combo"><canvas id="c-msg-cpm"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>MoM Ad Spend vs. ROAS</h3><p>Ad spend and ROAS</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Ad spend</span><span><i class="sw ln line"></i>ROAS</span></div><div class="chart-box combo"><canvas id="c-ad-roas"></canvas></div></article>
-      <article class="card span-6"><div class="card-head"><h3>MoM Revenue vs. Target</h3><p>Bar label = % of monthly plan</p></div>
-        <div class="legend-row"><span><i class="sw  s1"></i>Revenue</span><span><i class="sw ln ink"></i>Target</span></div><div class="chart-box combo"><canvas id="c-rev-target"></canvas></div></article>
-    </section>
-
-    <section class="grid">
+      <article class="card span-5">
+        <div class="card-head">
+          <h2>Message Funnel</h2>
+          <p>Messages → 2-way → 5-way → purchase</p>
+        </div>
+        <div id="funnel" class="funnel"></div>
+      </article>
       <article class="card span-7">
         <div class="card-head">
           <h2>Efficiency Matrix: Cost/Message × Target</h2>
@@ -474,24 +481,33 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
         </div>
         <div class="chart-box tall"><canvas id="c-quad"></canvas></div>
       </article>
-      <article class="card span-5">
-        <div class="card-head">
-          <h2>FB Comments & Followers</h2>
-          <p>Fanpage engagement by store</p>
-        </div>
-        <div class="legend-row">
-          <span><i class="sw s1"></i>Comments</span><span><i class="sw s2"></i>New followers</span>
-        </div>
+    </section>
+    <section class="grid">
+      <article class="card span-6"><div class="card-head"><h3>MoM Message vs. Cost/Message</h3><p>FB messages and cost per message</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>FB Messages</span><span><i class="sw ln line"></i>Cost/Message</span></div><div class="chart-box combo"><canvas id="c-msg-cpm"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Ad Cost vs Cost/Message vs Cost/Comment</h3><p>Cost per message / comment · “↑” = off scale</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>FB Ad Cost</span><span><i class="sw ln line"></i>Cost/Message</span><span><i class="sw ln line2"></i>Cost/Comment</span></div><div class="chart-box combo"><canvas id="c-cost-msg-cmt"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Sale Units & AOV</h3><p>Units sold and average order value</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Sale units</span><span><i class="sw ln line"></i>AOV</span></div><div class="chart-box combo"><canvas id="c-aov-units"></canvas></div></article>
+      <article class="card span-6"><div class="card-head"><h3>Paid vs Organic Contacts</h3><p>Contact sources and % organic</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Paid</span><span><i class="sw s2"></i>Organic</span><span><i class="sw ln line"></i>% Organic</span></div><div class="chart-box combo"><canvas id="c-contacts"></canvas></div></article>
+    </section>
+    <section class="grid">
+      <article class="card span-6">
+        <div class="card-head"><h2>FB Comments & Followers</h2><p>Fanpage engagement by store</p></div>
+        <div class="legend-row"><span><i class="sw s1"></i>Comments</span><span><i class="sw s2"></i>New followers</span></div>
         <div class="chart-box tall"><canvas id="c-eng"></canvas></div>
+      </article>
+      <article class="card span-6">
+        <div class="card-head"><h2>Digital Insights</h2><p>Computed from the selected month</p></div>
+        <div class="ins-grid inner" id="dig-insights"></div>
       </article>
     </section>
 
-    <section class="section-title">
-      <h2>Deeper Insights</h2>
-      <p>Computed from the selected month</p>
+    <section class="part-title">
+      <span class="part-n">3</span>
+      <div><h2>Takeaways & Data Quality</h2><p>What to do next month, and what to verify before closing the numbers.</p></div>
     </section>
-    <section class="ins-grid" id="adv-insights"></section>
-
     <section class="grid">
       <article class="card span-8 takeaway">
         <div class="card-head"><h2>Key Takeaway & Action</h2><p id="takeaway-sub"></p></div>
@@ -606,7 +622,7 @@ const Tip = {
   },
 };
 
-// ---------- DOM sections: hero text, KPI tiles, concentration alert, bullet, funnel, shop matrix ----------
+// ---------- DOM sections: hero text, KPI tiles, concentration alert, funnel, store matrix ----------
 
 function deltaBadge(cur, prev, goodWhenUp, label = 'MoM') {
   const d = pctChange(cur, prev);
@@ -622,27 +638,37 @@ function renderHero(month, t) {
   document.title = `CM Digital Performance · ${monthLabel(month)}`;
 }
 
+/** Coloured "▲12% MoM" text for compact tiles. */
+function momText(cur, prev, goodUp) {
+  const d = pctChange(cur, prev);
+  if (d == null || !isFinite(d)) return '';
+  const cls = goodUp == null ? '' : (d >= 0) === goodUp ? 'good-t' : 'bad-t';
+  return ` · <span class="${cls}">${d >= 0 ? '▲' : '▼'}${Math.abs(d * 100).toFixed(0)}% MoM</span>`;
+}
+
 function renderKpis(t, p) {
   const P = p || {};
+  // Part 1 — business view: sell-in, target, marketing cost and what it returned
   const tiles = [
-    ['Revenue', fmtMoney(t.rev), `${t.hits}/${t.nT} stores on adjusted target`, deltaBadge(t.rev, P.rev, true)],
-    ['Amount Spent', fmtMoney(t.ad), `${fmtPct(t.budgetUse, 0)} of budget ${fmtMoney(t.budget)}`, deltaBadge(t.ad, P.ad, null)],
-    ['ROAS', fmtNum(t.roas, 1), 'revenue ÷ ad spend', deltaBadge(t.roas, P.roas, true)],
-    ['% CIR', fmtPct(t.cir, 2), 'ad spend ÷ revenue', deltaBadge(t.cir, P.cir, false)],
-    ['FB Messages', fmtInt(t.msg), `${fmtInt(t.msg2)} two-way`, deltaBadge(t.msg, P.msg, true)],
-    ['Cost/Message', fmtMoney(t.cpm), 'FB ad cost ÷ messages', deltaBadge(t.cpm, P.cpm, false)],
+    ['Sell-in Revenue', fmtMoney(t.rev), `${t.hits}/${t.nT} stores on adjusted target`, deltaBadge(t.rev, P.rev, true)],
+    ['Stores on Target', `${t.hits}/${t.nT}`, `monthly plan only ${t.planHits}/${t.nT}`, `<span class="delta">adjusted to ${t.qLabel}</span>`],
+    ['Marketing Cost (FB)', fmtMoney(t.ad), `${fmtPct(t.budgetUse, 0)} of budget ${fmtMoney(t.budget)}`, deltaBadge(t.ad, P.ad, null)],
+    ['% CIR', fmtPct(t.cir, 2), 'marketing cost ÷ sell-in', deltaBadge(t.cir, P.cir, false)],
+    ['ROAS', fmtNum(t.roas, 1), 'sell-in ÷ marketing cost', deltaBadge(t.roas, P.roas, true)],
+    ['Sale Units', fmtInt(t.units), `${fmtPct(t.unitAch, 0)} of unit target ${fmtInt(t.tUnits)}`, deltaBadge(t.units, P.units, true)],
   ];
   document.getElementById('kpi-hero').innerHTML = tiles.map(([l, v, s, d]) =>
     `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div>${d}</div>`).join('');
 
+  // Part 2 — digital view: conversations, their cost and quality
   const chips = [
-    ['Stores on target', `${t.hits}/${t.nT}`, `adjusted · monthly plan only ${t.planHits}/${t.nT}`],
-    ['Sale units', fmtInt(t.units), `${fmtPct(t.unitAch, 0)} target ${fmtInt(t.tUnits)}`],
+    ['FB Messages', fmtInt(t.msg), `${fmtInt(t.msg2)} two-way${momText(t.msg, P.msg, true)}`],
+    ['Cost/Message', fmtMoney(t.cpm), `FB cost ÷ messages${momText(t.cpm, P.cpm, false)}`],
     ['% 2-way / message', fmtPct(t.r2, 0), `${fmtInt(t.msg2)} conversations`],
-    ['% 5-way / 2-way', fmtPct(t.r5, 1), `${fmtInt(t.msg5)} deep conversations`],
-    ['Purchases from msg', fmtInt(t.buy), `${fmtPct(t.buyRate, 2)} / message`],
-    ['FB Comments', fmtInt(t.cmt), `${fmtMoney(t.cpc)} / comment`],
-    ['New followers', fmtInt(t.fol), P.fol ? `${P.fol > t.fol ? '▼' : '▲'} from ${fmtInt(P.fol)} last month` : ''],
+    ['% 5-way / 2-way', fmtPct(t.r5, 1), `${fmtInt(t.msg5)} deep conversations${momText(t.msg5, P.msg5, true)}`],
+    ['Purchases from msg', fmtInt(t.buy), `${fmtPct(t.buyRate, 2)} of messages${momText(t.buy, P.buy, true)}`],
+    ['FB Comments', fmtInt(t.cmt), `${fmtMoney(t.cpc)} / comment${momText(t.cmt, P.cmt, true)}`],
+    ['New followers', fmtInt(t.fol), `fanpage${momText(t.fol, P.fol, true)}`],
   ];
   document.getElementById('kpi-strip').innerHTML = chips.map(([l, v, s]) =>
     `<div class="chip"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
@@ -663,25 +689,6 @@ function renderConcentrationAlert(shops, t) {
     Excluding it, the other stores reach <b>${fmtPct(restAch, 1)} of adjusted target</b> (${restOthers.filter(s => s.met).length}/${restOthers.length} on target),
     ROAS <b>${fmtNum(rest.roas, 1)}</b>, CIR <b>${fmtPct(rest.cir, 2)}</b>, Cost/Message <b>${fmtMoney(rest.cpm)}</b>.</p>
   </div></div>`;
-}
-
-/** Bullet chart: achievement bar vs 100% target tick, axis capped at 160% with overflow marker. */
-function renderBullet(shops) {
-  const CAP = 1.6, el = document.getElementById('bullet');
-  const list = shops.filter(s => s.ach != null).sort((a, b) => b.ach - a.ach);
-  const pos = v => (Math.min(v, CAP) / CAP) * 100;
-  el.innerHTML = list.map(s => {
-    const ok = s.ach >= 1;
-    const tip = `<b>${s.name}</b><br>Revenue ${fmtMoney(s.rev)} / adjusted target ${fmtMoney(Math.max(0, s.tAdj))}<br>Monthly plan ${fmtMoney(s.target)} (${fmtPct(s.achM, 0)})`;
-    return `<div class="b-row" data-tip="${tip.replace(/"/g, '&quot;')}">
-      <div class="b-name">${s.name}</div>
-      <div class="b-track"><div class="b-fill ${ok ? '' : 'under'} ${s.ach > CAP ? 'over' : ''}" style="width:${pos(s.ach)}%"></div>
-        <div class="b-target" style="left:${pos(1)}%"></div></div>
-      <div class="b-val">${ok ? '' : fmtPct(s.ach, 0)}<span class="st ${ok ? 'ok' : 'no'}">${ok ? '✓ met' : '▼ below'}</span>
-        <span class="b-sub">${fmtMoney(s.rev)} / ${fmtMoney(Math.max(0, s.tAdj))}</span></div></div>`;
-  }).join('') + `<div class="b-axis"><span></span><div>${[0, .5, 1, 1.5].map(v =>
-    `<span style="left:${pos(v)}%">${v * 100}%</span>`).join('')}</div><span></span></div>`;
-  Tip.bind(el);
 }
 
 /** Message funnel (single series → one colour) + per-shop conversion ranks. */
@@ -944,7 +951,8 @@ function renderTrendCharts(month) {
     lines: [{ label: 'Target', data: aggs.map(a => a.target), color: C.ink, dashed: true, axis: 'y' }],
     yFmt: money0, tipFmt: { Revenue: v => fmtMoney(v), Target: v => fmtMoney(v) } });
 
-  document.getElementById('trend-note').textContent =
+  const note = document.getElementById('trend-note');
+  if (note) note.textContent =
     `${monthShort(months[0])}–${monthShort(month)} ${month.slice(0, 4)} · number of stores with data changes by month (${aggs.map(a => a.shops).join(' → ')}) — read trends with coverage in mind`;
 }
 
@@ -1201,6 +1209,70 @@ function renderAdjustedSection(month, shops, t) {
   }
 }
 
+// ---------- Store momentum: last 3 months of sell-in per store, crossed with the adjusted-target status ----------
+// A store can be "on target" this month only because earlier months were strong — momentum shows who is slowing.
+
+const MOMENTUM_SIGNAL = {
+  healthy: ['good-t', '✓ Healthy', 'on target and holding up'],
+  slowing: ['warn-t', '⚠ On target, slowing', 'met thanks to earlier months, but sell-in is falling'],
+  recovering: ['warn-t', '↗ Recovering', 'below target but sell-in is rising'],
+  risk: ['bad-t', '✕ At risk', 'below target and not improving'],
+};
+
+/** Per-store 3-month revenue window ending at `month` + trend vs the average of the two earlier months. */
+function storeMomentum(month, shops) {
+  const i = MONTHS.indexOf(month);
+  const win = MONTHS.slice(Math.max(0, i - 2), i + 1);
+  return shops.filter(s => s.target).map(s => {
+    const revs = win.map(m => { const r = RAW_ROWS.find(x => x.shop === s.shop && x.month === m); return r && r.revenue != null ? r.revenue : null; });
+    const prior = revs.slice(0, -1).filter(v => v != null);
+    const base = prior.length ? prior.reduce((a, v) => a + v, 0) / prior.length : null;
+    const chg = base ? s.rev / base - 1 : null;
+    const trend = chg == null ? 'new' : chg >= 0.1 ? 'up' : chg <= -0.1 ? 'down' : 'flat';
+    const signal = s.met ? (trend === 'down' ? 'slowing' : 'healthy') : (trend === 'up' ? 'recovering' : 'risk');
+    return { s, revs, chg, trend, signal };
+  });
+}
+
+/** Three tiny bars (oldest → current), scaled per row; the current month is the solid brand bar. */
+function sparkBars(revs) {
+  const max = Math.max(...revs.map(v => v || 0)) || 1;
+  return `<svg class="spark" viewBox="0 0 54 22" aria-hidden="true">${revs.map((v, k) => {
+    const h = v ? Math.max(2, (v / max) * 20) : 0;
+    return `<rect x="${k * 19}" y="${22 - h}" width="14" height="${h}" rx="2" class="${k === revs.length - 1 ? 'cur' : ''}"/>`;
+  }).join('')}</svg>`;
+}
+
+function renderMomentum(month, shops) {
+  const rows = storeMomentum(month, shops);
+  const i = MONTHS.indexOf(month), win = MONTHS.slice(Math.max(0, i - 2), i + 1);
+  const ms = monthShort(month), priorLbl = win.slice(0, -1).map(monthShort).join('–');
+  const order = { slowing: 0, risk: 1, recovering: 2, healthy: 3 };
+  rows.sort((a, b) => order[a.signal] - order[b.signal] || (a.chg ?? 0) - (b.chg ?? 0));
+
+  const count = k => rows.filter(r => r.signal === k);
+  document.getElementById('m-kpis').innerHTML = ['healthy', 'slowing', 'recovering', 'risk'].map(k => {
+    const [cls, label, desc] = MOMENTUM_SIGNAL[k], list = count(k);
+    return `<div class="chip"><div class="lbl ${cls}">${label}</div><div class="val">${list.length}</div>
+      <div class="sub">${list.map(r => r.s.name).join(', ') || desc}</div></div>`;
+  }).join('');
+
+  const pct = v => (v == null ? '<span class="muted">new</span>' : `<span class="${v >= 0 ? 'good-t' : 'bad-t'}">${v >= 0 ? '▲' : '▼'}${Math.abs(v * 100).toFixed(0)}%</span>`);
+  const head = `<thead><tr><th>Store</th>${win.map(m => `<th>${monthShort(m)}</th>`).join('')}<th>Trend</th>
+    <th>${ms} vs ${priorLbl} avg</th><th>Adjusted target</th><th>Signal</th></tr></thead>`;
+  const body = rows.map(r => {
+    const [cls, label] = MOMENTUM_SIGNAL[r.signal];
+    return `<tr><td><div class="shop-cell">${r.s.name}<span class="pill tier ${(r.s.tier || '').toLowerCase()}">${r.s.tier}</span></div></td>
+      ${r.revs.map(v => `<td>${v == null ? '<span class="muted">–</span>' : fmtMoney(v)}</td>`).join('')}
+      <td>${sparkBars(r.revs)}</td><td>${pct(r.chg)}</td>
+      <td class="${r.s.met ? 'good-t' : 'bad-t'}">${fmtAdj(r.s)}</td><td class="${cls}">${label}</td></tr>`;
+  }).join('');
+  document.getElementById('momentum').innerHTML = head + `<tbody>${body}</tbody>`;
+  document.getElementById('m-note').textContent =
+    `Sell-in per store, ${win.map(monthShort).join(' → ')} · trend = ${ms} vs the average of ${priorLbl} (±10% = flat)`;
+  return rows;
+}
+
 // ---------- Auto-computed deeper insights for the selected month (works for any month) ----------
 
 function insightCard(kicker, big, text, tone = '') {
@@ -1208,7 +1280,7 @@ function insightCard(kicker, big, text, tone = '') {
 }
 
 function renderAdvancedInsights(shops, t) {
-  const cards = [];
+  const cards = [], dig = []; // cards → business grid, dig → digital grid
   const names = list => list.map(s => s.name).join(', ') || '—';
   const spent = shops.filter(s => s.adCost > 0);
 
@@ -1223,6 +1295,13 @@ function renderAdvancedInsights(shops, t) {
   const valueSpend = value.reduce((a, s) => a + s.adCost, 0);
   cards.push(insightCard('Best-value stores', `${value.length} stores`,
     `Cost/Message ≤ average (${fmtMoney(t.cpm)}) and on target: <b>${names(value)}</b> — they get only ${fmtPct(div(valueSpend, t.ad), 0)} of the budget.`, 'good'));
+
+  // 2b. Momentum: stores that met the adjusted target only thanks to earlier months
+  if (t.momentum) {
+    const slowing = t.momentum.filter(r => r.signal === 'slowing');
+    cards.push(insightCard('Momentum check', `${slowing.length} of ${t.hits}`,
+      `on-target stores are <b>slowing</b> vs the previous two months: <b>${slowing.map(r => `${r.s.name} ${r.chg != null ? (r.chg * 100).toFixed(0) + '%' : ''}`).join(', ') || '—'}</b>. They met target thanks to earlier stock-in — next quarter needs a fresh push.`, slowing.length ? 'bad' : 'good'));
+  }
 
   // 3. Budget pacing vs plan
   const over = spent.filter(s => s.budgetUse > 1.1 && s.budgetUse !== Infinity);
@@ -1240,19 +1319,19 @@ function renderAdvancedInsights(shops, t) {
   // 5. Paid dependency
   const org = shops.reduce((a, s) => a + n0(s.contacts_org), 0);
   const topOrg = [...shops].filter(s => s.contacts).sort((a, b) => n0(b.contacts_org) / b.contacts - n0(a.contacts_org) / a.contacts)[0];
-  cards.push(insightCard('Paid dependency', fmtPct(div(t.paid, t.contacts), 0),
+  dig.push(insightCard('Paid dependency', fmtPct(div(t.paid, t.contacts), 0),
     `of contacts come from paid (${fmtInt(t.paid)}/${fmtInt(t.contacts)}); organic only ${fmtInt(org)}. Best organic: <b>${topOrg ? topOrg.name : '—'}</b> (${topOrg ? fmtPct(n0(topOrg.contacts_org) / topOrg.contacts, 0) : '–'}).`));
 
   // 6. Comments that turn into messages
   const fromCmt = shops.reduce((a, s) => a + n0(s.msg_cmt), 0);
   const topCmt = [...shops].sort((a, b) => n0(b.msg_cmt) - n0(a.msg_cmt)).slice(0, 3);
-  cards.push(insightCard('Comment → Message', fmtInt(fromCmt),
+  dig.push(insightCard('Comment → Message', fmtInt(fromCmt),
     `messages started from a comment (${fmtPct(div(fromCmt, t.msg), 0)} of all messages). Top: <b>${topCmt.map(s => `${s.name} ${fmtInt(s.msg_cmt)}`).join(', ')}</b> — keep comment-driving content.`));
 
   // 7. O2O + basket
   const o2o = shops.reduce((a, s) => a + n0(s.units_o2o), 0);
   const o2oShops = shops.filter(s => n0(s.units_o2o) > 0).sort((a, b) => n0(b.units_o2o) - n0(a.units_o2o));
-  cards.push(insightCard('Online → Offline (O2O)', fmtInt(o2o),
+  dig.push(insightCard('Online → Offline (O2O)', fmtInt(o2o),
     `O2O units (${fmtPct(div(o2o, t.units), 1)} of all units) from ${o2oShops.length} stores: <b>${o2oShops.map(s => `${s.name} ${fmtInt(s.units_o2o)}`).join(', ') || '—'}</b>.`));
 
   const aovs = shops.filter(s => s.aov).sort((a, b) => b.aov - a.aov);
@@ -1263,36 +1342,52 @@ function renderAdvancedInsights(shops, t) {
   }
 
   // 8. Deep-conversation to purchase
-  cards.push(insightCard('5-way → purchase', fmtPct(div(t.buy, t.msg5), 1),
+  dig.push(insightCard('5-way → purchase', fmtPct(div(t.buy, t.msg5), 1),
     `${fmtInt(t.buy)} orders from ${fmtInt(t.msg5)} 5-way conversations. Each inbox order costs ${fmtMoney(div(t.ad, t.buy))} in ads (inbox-attributed orders only).`));
 
-  document.getElementById('adv-insights').innerHTML = cards.join('');
+  document.getElementById('biz-insights').innerHTML = cards.join('');
+  document.getElementById('dig-insights').innerHTML = dig.join('');
 }
 
 // ---------- Insights: analyst notes per month (hand-written) + rule-based fallback + data-quality checks ----------
 
-// Hand-written analyst notes. Add a new key ("2026.10") each month; months without notes use autoTakeaways().
-//   overall / action : headline paragraph of the detailed takeaway section
-//   shops            : [store, tag, finding, action] cards
-//   slide            : [tag, headline, detail, action] — only the 3–4 real insights, shown on the 1-page slide
+// Analyst notes per month. Add a new key ("2026.10") each month; months without notes use autoTakeaways().
+//   overall / action : headline paragraph of the detailed takeaway section (business first, then digital)
+//   shops            : [store, tag, finding(c), action] — `finding` is a function of the live context `c`
+//                      (see takeawayContext) so every number comes from the data, not typed by hand
+//   slide            : [tag, headline, detail, action] — fixed text for the 1-page slide (3–4 real insights)
 const MONTH_NOTES = {
   '2026.09': {
-    overall: `<b>Sep 2026:</b> ₫196.6M ad spend (−10% vs Aug) → <b>₫33.92B revenue</b> (+34%), ROAS 172.5 (Aug 115.5), CIR 0.58%.
-      <b>6/11 stores hit the adjusted target</b> (Q3 target − Jul+Aug revenue) vs only 4/11 on the monthly plan.
-      Messages −13% and Cost/Message +4% (₫19.9K), yet inbox purchases +63% (94 → 153). Đại Hồng Phát alone is 50% of revenue.`,
-    action: 'Action: move budget from BigMi & CPS to Mi360, Hotek, Danke · verify Đại Hồng Phát before closing the numbers.',
+    overall: c => `<b>Business:</b> ${c.money(c.t.rev)} sell-in (${c.mom(c.t.rev, c.p.rev)} vs ${c.ps}) for ${c.money(c.t.ad)} marketing cost
+      → CIR ${c.pct(c.t.cir, 2)}, ROAS ${c.num(c.t.roas)}. <b>${c.t.hits}/${c.t.nT} stores hit the adjusted target</b>
+      (monthly plan only ${c.t.planHits}/${c.t.nT}), but ${c.slowing.length} of them are slowing vs ${c.prior} (${c.names(c.slowing)}).
+      Đại Hồng Phát alone is ${c.pct(c.s('Đại Hồng Phát').rev / c.t.rev, 0)} of sell-in.
+      <br><b>Digital:</b> messages ${c.mom(c.t.msg, c.p.msg)}, Cost/Message ${c.money(c.t.cpm)} (${c.mom(c.t.cpm, c.p.cpm)}),
+      inbox purchases ${c.int(c.p.buy)} → ${c.int(c.t.buy)} (${c.mom(c.t.buy, c.p.buy)}).`,
+    action: 'Action: move budget from BigMi & CPS to Mi360 and Hotek · re-activate the slowing on-target stores before Q4 · verify Đại Hồng Phát before closing the numbers.',
     shops: [
-      ['Đại Hồng Phát', 'verify', '₫16.92B in Sep (484% of plan, 1,780 units vs 233) while messages −7.5% and spend −4.5% — the jump is not digital-driven.', 'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
-      ['Mi360', 'scale', 'On adjusted target (98% of monthly plan, front-loaded Jul–Aug). Lowest Cost/Message ₫12.2K, ROAS 463, but used only 21% of budget; messages −40%.', 'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
-      ['Hotek', 'scale', 'On target (134% of plan). 33 inbox orders — highest of all stores — at ₫15.0K/message; spent 19% over budget.', 'Keep and add budget; copy its inbox script to other stores.'],
-      ['Danke', 'scale', 'On target (105% of plan). Cost/Message ₫12.9K (−54% MoM) with spend −45%; 30 inbox orders, 5-way/2-way 23% (best in MD).', 'Scale with control; use as the 2-way → 5-way chat benchmark.'],
-      ['Cường Phát', 'keep', 'Only 72% of monthly plan but on adjusted target thanks to Jul–Aug. Cost/Message ₫16.0K is fine, 2-way rate only 70%.', 'Bottleneck is conversion: faster inbox replies and follow-ups.'],
-      ['Homecare', 'keep', 'On target (103% of plan) on a small ₫8.5M budget; Cost/Message ₫17.6K (−16% MoM).', 'Keep current spend.'],
-      ['Domotek', 'optimize', '88% of adjusted target — short by just ₫50M. Spend doubled, messages +157%, Cost/Message −22%, but revenue −28%.', 'More leads are not converting: check lead quality and the closing process.'],
-      ['H&T Smart Home', 'optimize', '65% of adjusted target (−₫1.23B). Cost/Message ₫24.8K, among the highest in MD; 5-way/2-way 13.5%.', 'Tighten targeting and the follow-up script to push 2-way → 5-way.'],
-      ['BigMi', 'fix', 'Largest spend ₫34.3M (17% of total) for 35% of adjusted target (−₫4.25B); ROAS 66, Cost/Message ₫24.8K, 12 inbox orders.', 'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
-      ['CPS', 'fix', 'Ran ₫21.6M with no budget plan. Cost/Message ₫48.3K (2.4× avg), CIR 2.73%, 17% of adjusted target, 0 inbox orders.', 'Cap spend; agree KPIs and the KA model before running again.'],
-      ['Giang Chi SmartHome', 'fix', 'Highest CIR 5.65%, 18% of adjusted target, Cost/Message ₫27.8K, 0 inbox orders.', 'Reduce budget or change the hero offer.'],
+      ['Đại Hồng Phát', 'verify', c => { const x = c.s('Đại Hồng Phát'); return `${c.money(x.rev)} sell-in (${c.pct(x.achM, 0)} of plan, ${c.int(x.units)} units vs ${c.int(x.t_units)}) while its messages ${c.momShop(x, 'msg')} and spend ${c.momShop(x, 'ad')} — the jump is not digital-driven.`; },
+        'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
+      ['BigMi', 'fix', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Largest' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total) for ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}. ROAS ${c.num(x.roas)}, Cost/Message ${c.money(x.cpm)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
+      ['CPS', 'fix', c => { const x = c.s('CPS'); return `Ran ${c.money(x.adCost)} with no budget plan for ${fmtAdj(x)} of adjusted target. Cost/Message ${c.money(x.cpm)} (${(x.cpm / c.t.cpm).toFixed(1)}× avg), CIR ${c.pct(x.cir, 2)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Cap spend; agree KPIs and the KA model before running again.'],
+      ['Mi360', 'scale', c => { const x = c.s('Mi360'); return `On adjusted target though only ${c.pct(x.achM, 0)} of plan (Jul–Aug front-loaded); sell-in ${c.trend(x)}. ${c.isMin(x, 'cpm') ? 'Lowest' : 'Low'} Cost/Message ${c.money(x.cpm)}, ROAS ${c.num(x.roas)}, but used only ${c.pct(x.budgetUse, 0)} of budget; messages ${c.momShop(x, 'msg')}.`; },
+        'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
+      ['Hotek', 'scale', c => { const x = c.s('Hotek'); return `On target (${c.pct(x.achM, 0)} of plan), sell-in ${c.trend(x)}. ${c.int(n0(x.purchase_msg))} inbox orders${c.isMax(x, 'purchase_msg') ? ' — highest of all stores —' : ''} at ${c.money(x.cpm)}/message; used ${c.pct(x.budgetUse, 0)} of budget.`; },
+        'Keep and add budget; copy its inbox script to other stores.'],
+      ['Cường Phát', 'keep', c => { const x = c.s('Cường Phát'); return `Met adjusted target only thanks to Jul–Aug: ${c.pct(x.achM, 0)} of plan, sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} is fine, but 2-way rate only ${c.pct(x.r2, 0)}.`; },
+        'Conversion is the bottleneck: faster inbox replies and follow-ups before Q4.'],
+      ['Danke', 'keep', c => { const x = c.s('Danke'); return `On target (${c.pct(x.achM, 0)} of plan) but sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} (${c.momShop(x, 'cpm')}), ${c.int(n0(x.purchase_msg))} inbox orders, 5-way/2-way ${c.pct(x.r5, 0)}.`; },
+        'Keep spend and use its chat flow as the benchmark; watch sell-in.'],
+      ['Homecare', 'keep', c => { const x = c.s('Homecare'); return `On target (${c.pct(x.achM, 0)} of plan) on a small ${c.money(x.adCost)} budget, but sell-in ${c.trend(x)}; Cost/Message ${c.money(x.cpm)}.`; },
+        'Keep current spend; check stock-in plan for Q4.'],
+      ['H&T Smart Home', 'optimize', c => { const x = c.s('H&T'); return `${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)}; 5-way/2-way ${c.pct(x.r5, 0)}.`; },
+        'Tighten targeting and the follow-up script to push 2-way → 5-way.'],
+      ['Domotek', 'optimize', c => { const x = c.s('Domotek'); return `${fmtAdj(x)} of adjusted target — short by ${c.money(x.gap)}. Spend ${c.momShop(x, 'ad')}, messages ${c.momShop(x, 'msg')}, but sell-in ${c.momShop(x, 'revenue')}.`; },
+        'More leads are not converting: check lead quality and the closing process.'],
+      ['Giang Chi SmartHome', 'fix', c => { const x = c.s('Giang Chi'); return `CIR ${c.pct(x.cir, 2)}${c.isMax(x, 'cir') ? ' — highest' : ''}, ${fmtAdj(x)} of adjusted target, Cost/Message ${c.money(x.cpm)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Reduce budget or change the hero offer.'],
     ],
     slide: [
       ['target', '6/11 stores on target, only 4/11 on plan',
@@ -1330,12 +1425,42 @@ function autoTakeaways(shops, t) {
   });
 }
 
+/** Live numbers + formatters handed to the analyst-note templates. */
+function takeawayContext(month, shops, t) {
+  const pm = prevMonth(month);
+  const p = pm ? aggregate(rowsOf(pm)) : {};
+  const prevRow = x => RAW_ROWS.find(r => r.shop === x.shop && r.month === pm) || {};
+  const ext = (key, dir) => shops.filter(x => x[key] != null && isFinite(x[key])).sort((a, b) => dir * (a[key] - b[key]))[0];
+  const mom = (cur, prev) => { const d = pctChange(cur, prev); return d == null || !isFinite(d) ? 'n/a' : `${d >= 0 ? '+' : '−'}${Math.abs(d * 100).toFixed(0)}%`; };
+  const momentum = t.momentum || [];
+  const qm = quarterMonths(month);
+  return {
+    t, p, ps: pm ? monthShort(pm) : '', prior: qm.slice(0, -1).map(monthShort).join('–') || 'last month',
+    s: name => { const x = shops.find(y => y.name.startsWith(name)); if (!x) throw new Error(`store "${name}" not in data`); return x; },
+    money: v => fmtMoney(v), pct: (v, d = 1) => fmtPct(v, d), int: fmtInt, num: (v, d = 1) => fmtNum(v, d), mom,
+    momShop: (x, key) => { const prev = prevRow(x); const cur = key === 'ad' ? x.adCost : key === 'msg' ? x.msgs : key === 'cpm' ? x.cpm : x[key];
+      const pv = key === 'cpm' ? div(n0(prev.ad), n0(prev.msg)) : prev[key]; return mom(cur, pv); },
+    trend: x => { const r = momentum.find(m => m.s.shop === x.shop); return r && r.chg != null ? `${r.chg >= 0 ? '+' : '−'}${Math.abs(r.chg * 100).toFixed(0)}% vs ${qm.length > 1 ? 'prior months' : 'last month'}` : 'new'; },
+    isMax: (x, key) => ext(key, -1) === x, isMin: (x, key) => ext(key, 1) === x,
+    slowing: momentum.filter(r => r.signal === 'slowing').map(r => r.s),
+    names: list => list.map(x => x.name).join(', ') || '—',
+  };
+}
+
 function renderTakeaways(month, shops, t) {
   const note = MONTH_NOTES[month];
-  const cards = note ? note.shops : autoTakeaways(shops, t);
-  const overall = note ? `${note.overall}<span class="act">${note.action}</span>`
-    : `<b>Overall:</b> ${fmtMoney(t.ad)} ad spend → ${fmtMoney(t.rev)} revenue (${t.hits}/${t.nT} stores on adjusted target), ROAS ${fmtNum(t.roas, 1)}, CIR ${fmtPct(t.cir, 2)}.`;
-  document.getElementById('takeaway-sub').textContent = note ? 'Analyst notes for this month' : 'Rule-based (no analyst notes for this month yet)';
+  let cards, overall;
+  try {
+    const c = note ? takeawayContext(month, shops, t) : null;
+    const val = v => (typeof v === 'function' ? v(c) : v);
+    cards = note ? note.shops.map(([name, tag, txt, act]) => [name, tag, val(txt), act]) : autoTakeaways(shops, t);
+    overall = note ? `${val(note.overall)}<span class="act">${note.action}</span>` : null;
+  } catch (e) { // a note refers to a store missing from the data → fall back to rules rather than break the page
+    console.warn('Analyst notes skipped:', e.message);
+    cards = autoTakeaways(shops, t); overall = null;
+  }
+  overall = overall || `<b>Overall:</b> ${fmtMoney(t.ad)} ad spend → ${fmtMoney(t.rev)} revenue (${t.hits}/${t.nT} stores on adjusted target), ROAS ${fmtNum(t.roas, 1)}, CIR ${fmtPct(t.cir, 2)}.`;
+  document.getElementById('takeaway-sub').textContent = note ? 'Analyst notes · all figures pulled live from the data' : 'Rule-based (no analyst notes for this month yet)';
   document.getElementById('takeaways').innerHTML = `<div class="overall">${overall}</div><div class="tk-grid">${cards.map(([name, tag, txt, act]) => `
     <div class="tk"><div class="tk-top"><b>${name}</b><span class="tag ${tag}">${TAG_LABEL[tag]}</span></div>
     <p>${txt}</p><div class="act">→ ${act}</div></div>`).join('')}</div>`;
@@ -1564,9 +1689,9 @@ function renderAll() {
   fitSlide();
   renderKpis(t, p);
   renderConcentrationAlert(shops, t);
-  renderBullet(shops);
   renderFunnel(t, shops);
   renderAdjustedSection(m, shops, t);
+  t.momentum = renderMomentum(m, shops);
   renderMatrix(shops, t, pm ? rowsOf(pm) : []);
   renderCharts(shops, t);
   renderAdvancedInsights(shops, t);

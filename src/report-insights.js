@@ -1,27 +1,42 @@
 // ---------- Insights: analyst notes per month (hand-written) + rule-based fallback + data-quality checks ----------
 
-// Hand-written analyst notes. Add a new key ("2026.10") each month; months without notes use autoTakeaways().
-//   overall / action : headline paragraph of the detailed takeaway section
-//   shops            : [store, tag, finding, action] cards
-//   slide            : [tag, headline, detail, action] — only the 3–4 real insights, shown on the 1-page slide
+// Analyst notes per month. Add a new key ("2026.10") each month; months without notes use autoTakeaways().
+//   overall / action : headline paragraph of the detailed takeaway section (business first, then digital)
+//   shops            : [store, tag, finding(c), action] — `finding` is a function of the live context `c`
+//                      (see takeawayContext) so every number comes from the data, not typed by hand
+//   slide            : [tag, headline, detail, action] — fixed text for the 1-page slide (3–4 real insights)
 const MONTH_NOTES = {
   '2026.09': {
-    overall: `<b>Sep 2026:</b> ₫196.6M ad spend (−10% vs Aug) → <b>₫33.92B revenue</b> (+34%), ROAS 172.5 (Aug 115.5), CIR 0.58%.
-      <b>6/11 stores hit the adjusted target</b> (Q3 target − Jul+Aug revenue) vs only 4/11 on the monthly plan.
-      Messages −13% and Cost/Message +4% (₫19.9K), yet inbox purchases +63% (94 → 153). Đại Hồng Phát alone is 50% of revenue.`,
-    action: 'Action: move budget from BigMi & CPS to Mi360, Hotek, Danke · verify Đại Hồng Phát before closing the numbers.',
+    overall: c => `<b>Business:</b> ${c.money(c.t.rev)} sell-in (${c.mom(c.t.rev, c.p.rev)} vs ${c.ps}) for ${c.money(c.t.ad)} marketing cost
+      → CIR ${c.pct(c.t.cir, 2)}, ROAS ${c.num(c.t.roas)}. <b>${c.t.hits}/${c.t.nT} stores hit the adjusted target</b>
+      (monthly plan only ${c.t.planHits}/${c.t.nT}), but ${c.slowing.length} of them are slowing vs ${c.prior} (${c.names(c.slowing)}).
+      Đại Hồng Phát alone is ${c.pct(c.s('Đại Hồng Phát').rev / c.t.rev, 0)} of sell-in.
+      <br><b>Digital:</b> messages ${c.mom(c.t.msg, c.p.msg)}, Cost/Message ${c.money(c.t.cpm)} (${c.mom(c.t.cpm, c.p.cpm)}),
+      inbox purchases ${c.int(c.p.buy)} → ${c.int(c.t.buy)} (${c.mom(c.t.buy, c.p.buy)}).`,
+    action: 'Action: move budget from BigMi & CPS to Mi360 and Hotek · re-activate the slowing on-target stores before Q4 · verify Đại Hồng Phát before closing the numbers.',
     shops: [
-      ['Đại Hồng Phát', 'verify', '₫16.92B in Sep (484% of plan, 1,780 units vs 233) while messages −7.5% and spend −4.5% — the jump is not digital-driven.', 'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
-      ['Mi360', 'scale', 'On adjusted target (98% of monthly plan, front-loaded Jul–Aug). Lowest Cost/Message ₫12.2K, ROAS 463, but used only 21% of budget; messages −40%.', 'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
-      ['Hotek', 'scale', 'On target (134% of plan). 33 inbox orders — highest of all stores — at ₫15.0K/message; spent 19% over budget.', 'Keep and add budget; copy its inbox script to other stores.'],
-      ['Danke', 'scale', 'On target (105% of plan). Cost/Message ₫12.9K (−54% MoM) with spend −45%; 30 inbox orders, 5-way/2-way 23% (best in MD).', 'Scale with control; use as the 2-way → 5-way chat benchmark.'],
-      ['Cường Phát', 'keep', 'Only 72% of monthly plan but on adjusted target thanks to Jul–Aug. Cost/Message ₫16.0K is fine, 2-way rate only 70%.', 'Bottleneck is conversion: faster inbox replies and follow-ups.'],
-      ['Homecare', 'keep', 'On target (103% of plan) on a small ₫8.5M budget; Cost/Message ₫17.6K (−16% MoM).', 'Keep current spend.'],
-      ['Domotek', 'optimize', '88% of adjusted target — short by just ₫50M. Spend doubled, messages +157%, Cost/Message −22%, but revenue −28%.', 'More leads are not converting: check lead quality and the closing process.'],
-      ['H&T Smart Home', 'optimize', '65% of adjusted target (−₫1.23B). Cost/Message ₫24.8K, among the highest in MD; 5-way/2-way 13.5%.', 'Tighten targeting and the follow-up script to push 2-way → 5-way.'],
-      ['BigMi', 'fix', 'Largest spend ₫34.3M (17% of total) for 35% of adjusted target (−₫4.25B); ROAS 66, Cost/Message ₫24.8K, 12 inbox orders.', 'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
-      ['CPS', 'fix', 'Ran ₫21.6M with no budget plan. Cost/Message ₫48.3K (2.4× avg), CIR 2.73%, 17% of adjusted target, 0 inbox orders.', 'Cap spend; agree KPIs and the KA model before running again.'],
-      ['Giang Chi SmartHome', 'fix', 'Highest CIR 5.65%, 18% of adjusted target, Cost/Message ₫27.8K, 0 inbox orders.', 'Reduce budget or change the hero offer.'],
+      ['Đại Hồng Phát', 'verify', c => { const x = c.s('Đại Hồng Phát'); return `${c.money(x.rev)} sell-in (${c.pct(x.achM, 0)} of plan, ${c.int(x.units)} units vs ${c.int(x.t_units)}) while its messages ${c.momShop(x, 'msg')} and spend ${c.momShop(x, 'ad')} — the jump is not digital-driven.`; },
+        'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
+      ['BigMi', 'fix', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Largest' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total) for ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}. ROAS ${c.num(x.roas)}, Cost/Message ${c.money(x.cpm)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
+      ['CPS', 'fix', c => { const x = c.s('CPS'); return `Ran ${c.money(x.adCost)} with no budget plan for ${fmtAdj(x)} of adjusted target. Cost/Message ${c.money(x.cpm)} (${(x.cpm / c.t.cpm).toFixed(1)}× avg), CIR ${c.pct(x.cir, 2)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Cap spend; agree KPIs and the KA model before running again.'],
+      ['Mi360', 'scale', c => { const x = c.s('Mi360'); return `On adjusted target though only ${c.pct(x.achM, 0)} of plan (Jul–Aug front-loaded); sell-in ${c.trend(x)}. ${c.isMin(x, 'cpm') ? 'Lowest' : 'Low'} Cost/Message ${c.money(x.cpm)}, ROAS ${c.num(x.roas)}, but used only ${c.pct(x.budgetUse, 0)} of budget; messages ${c.momShop(x, 'msg')}.`; },
+        'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
+      ['Hotek', 'scale', c => { const x = c.s('Hotek'); return `On target (${c.pct(x.achM, 0)} of plan), sell-in ${c.trend(x)}. ${c.int(n0(x.purchase_msg))} inbox orders${c.isMax(x, 'purchase_msg') ? ' — highest of all stores —' : ''} at ${c.money(x.cpm)}/message; used ${c.pct(x.budgetUse, 0)} of budget.`; },
+        'Keep and add budget; copy its inbox script to other stores.'],
+      ['Cường Phát', 'keep', c => { const x = c.s('Cường Phát'); return `Met adjusted target only thanks to Jul–Aug: ${c.pct(x.achM, 0)} of plan, sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} is fine, but 2-way rate only ${c.pct(x.r2, 0)}.`; },
+        'Conversion is the bottleneck: faster inbox replies and follow-ups before Q4.'],
+      ['Danke', 'keep', c => { const x = c.s('Danke'); return `On target (${c.pct(x.achM, 0)} of plan) but sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} (${c.momShop(x, 'cpm')}), ${c.int(n0(x.purchase_msg))} inbox orders, 5-way/2-way ${c.pct(x.r5, 0)}.`; },
+        'Keep spend and use its chat flow as the benchmark; watch sell-in.'],
+      ['Homecare', 'keep', c => { const x = c.s('Homecare'); return `On target (${c.pct(x.achM, 0)} of plan) on a small ${c.money(x.adCost)} budget, but sell-in ${c.trend(x)}; Cost/Message ${c.money(x.cpm)}.`; },
+        'Keep current spend; check stock-in plan for Q4.'],
+      ['H&T Smart Home', 'optimize', c => { const x = c.s('H&T'); return `${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)}; 5-way/2-way ${c.pct(x.r5, 0)}.`; },
+        'Tighten targeting and the follow-up script to push 2-way → 5-way.'],
+      ['Domotek', 'optimize', c => { const x = c.s('Domotek'); return `${fmtAdj(x)} of adjusted target — short by ${c.money(x.gap)}. Spend ${c.momShop(x, 'ad')}, messages ${c.momShop(x, 'msg')}, but sell-in ${c.momShop(x, 'revenue')}.`; },
+        'More leads are not converting: check lead quality and the closing process.'],
+      ['Giang Chi SmartHome', 'fix', c => { const x = c.s('Giang Chi'); return `CIR ${c.pct(x.cir, 2)}${c.isMax(x, 'cir') ? ' — highest' : ''}, ${fmtAdj(x)} of adjusted target, Cost/Message ${c.money(x.cpm)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
+        'Reduce budget or change the hero offer.'],
     ],
     slide: [
       ['target', '6/11 stores on target, only 4/11 on plan',
@@ -59,12 +74,42 @@ function autoTakeaways(shops, t) {
   });
 }
 
+/** Live numbers + formatters handed to the analyst-note templates. */
+function takeawayContext(month, shops, t) {
+  const pm = prevMonth(month);
+  const p = pm ? aggregate(rowsOf(pm)) : {};
+  const prevRow = x => RAW_ROWS.find(r => r.shop === x.shop && r.month === pm) || {};
+  const ext = (key, dir) => shops.filter(x => x[key] != null && isFinite(x[key])).sort((a, b) => dir * (a[key] - b[key]))[0];
+  const mom = (cur, prev) => { const d = pctChange(cur, prev); return d == null || !isFinite(d) ? 'n/a' : `${d >= 0 ? '+' : '−'}${Math.abs(d * 100).toFixed(0)}%`; };
+  const momentum = t.momentum || [];
+  const qm = quarterMonths(month);
+  return {
+    t, p, ps: pm ? monthShort(pm) : '', prior: qm.slice(0, -1).map(monthShort).join('–') || 'last month',
+    s: name => { const x = shops.find(y => y.name.startsWith(name)); if (!x) throw new Error(`store "${name}" not in data`); return x; },
+    money: v => fmtMoney(v), pct: (v, d = 1) => fmtPct(v, d), int: fmtInt, num: (v, d = 1) => fmtNum(v, d), mom,
+    momShop: (x, key) => { const prev = prevRow(x); const cur = key === 'ad' ? x.adCost : key === 'msg' ? x.msgs : key === 'cpm' ? x.cpm : x[key];
+      const pv = key === 'cpm' ? div(n0(prev.ad), n0(prev.msg)) : prev[key]; return mom(cur, pv); },
+    trend: x => { const r = momentum.find(m => m.s.shop === x.shop); return r && r.chg != null ? `${r.chg >= 0 ? '+' : '−'}${Math.abs(r.chg * 100).toFixed(0)}% vs ${qm.length > 1 ? 'prior months' : 'last month'}` : 'new'; },
+    isMax: (x, key) => ext(key, -1) === x, isMin: (x, key) => ext(key, 1) === x,
+    slowing: momentum.filter(r => r.signal === 'slowing').map(r => r.s),
+    names: list => list.map(x => x.name).join(', ') || '—',
+  };
+}
+
 function renderTakeaways(month, shops, t) {
   const note = MONTH_NOTES[month];
-  const cards = note ? note.shops : autoTakeaways(shops, t);
-  const overall = note ? `${note.overall}<span class="act">${note.action}</span>`
-    : `<b>Overall:</b> ${fmtMoney(t.ad)} ad spend → ${fmtMoney(t.rev)} revenue (${t.hits}/${t.nT} stores on adjusted target), ROAS ${fmtNum(t.roas, 1)}, CIR ${fmtPct(t.cir, 2)}.`;
-  document.getElementById('takeaway-sub').textContent = note ? 'Analyst notes for this month' : 'Rule-based (no analyst notes for this month yet)';
+  let cards, overall;
+  try {
+    const c = note ? takeawayContext(month, shops, t) : null;
+    const val = v => (typeof v === 'function' ? v(c) : v);
+    cards = note ? note.shops.map(([name, tag, txt, act]) => [name, tag, val(txt), act]) : autoTakeaways(shops, t);
+    overall = note ? `${val(note.overall)}<span class="act">${note.action}</span>` : null;
+  } catch (e) { // a note refers to a store missing from the data → fall back to rules rather than break the page
+    console.warn('Analyst notes skipped:', e.message);
+    cards = autoTakeaways(shops, t); overall = null;
+  }
+  overall = overall || `<b>Overall:</b> ${fmtMoney(t.ad)} ad spend → ${fmtMoney(t.rev)} revenue (${t.hits}/${t.nT} stores on adjusted target), ROAS ${fmtNum(t.roas, 1)}, CIR ${fmtPct(t.cir, 2)}.`;
+  document.getElementById('takeaway-sub').textContent = note ? 'Analyst notes · all figures pulled live from the data' : 'Rule-based (no analyst notes for this month yet)';
   document.getElementById('takeaways').innerHTML = `<div class="overall">${overall}</div><div class="tk-grid">${cards.map(([name, tag, txt, act]) => `
     <div class="tk"><div class="tk-top"><b>${name}</b><span class="tag ${tag}">${TAG_LABEL[tag]}</span></div>
     <p>${txt}</p><div class="act">→ ${act}</div></div>`).join('')}</div>`;

@@ -1,4 +1,4 @@
-// ---------- DOM sections: hero text, KPI tiles, concentration alert, bullet, funnel, shop matrix ----------
+// ---------- DOM sections: hero text, KPI tiles, concentration alert, funnel, store matrix ----------
 
 function deltaBadge(cur, prev, goodWhenUp, label = 'MoM') {
   const d = pctChange(cur, prev);
@@ -14,27 +14,37 @@ function renderHero(month, t) {
   document.title = `CM Digital Performance · ${monthLabel(month)}`;
 }
 
+/** Coloured "▲12% MoM" text for compact tiles. */
+function momText(cur, prev, goodUp) {
+  const d = pctChange(cur, prev);
+  if (d == null || !isFinite(d)) return '';
+  const cls = goodUp == null ? '' : (d >= 0) === goodUp ? 'good-t' : 'bad-t';
+  return ` · <span class="${cls}">${d >= 0 ? '▲' : '▼'}${Math.abs(d * 100).toFixed(0)}% MoM</span>`;
+}
+
 function renderKpis(t, p) {
   const P = p || {};
+  // Part 1 — business view: sell-in, target, marketing cost and what it returned
   const tiles = [
-    ['Revenue', fmtMoney(t.rev), `${t.hits}/${t.nT} stores on adjusted target`, deltaBadge(t.rev, P.rev, true)],
-    ['Amount Spent', fmtMoney(t.ad), `${fmtPct(t.budgetUse, 0)} of budget ${fmtMoney(t.budget)}`, deltaBadge(t.ad, P.ad, null)],
-    ['ROAS', fmtNum(t.roas, 1), 'revenue ÷ ad spend', deltaBadge(t.roas, P.roas, true)],
-    ['% CIR', fmtPct(t.cir, 2), 'ad spend ÷ revenue', deltaBadge(t.cir, P.cir, false)],
-    ['FB Messages', fmtInt(t.msg), `${fmtInt(t.msg2)} two-way`, deltaBadge(t.msg, P.msg, true)],
-    ['Cost/Message', fmtMoney(t.cpm), 'FB ad cost ÷ messages', deltaBadge(t.cpm, P.cpm, false)],
+    ['Sell-in Revenue', fmtMoney(t.rev), `${t.hits}/${t.nT} stores on adjusted target`, deltaBadge(t.rev, P.rev, true)],
+    ['Stores on Target', `${t.hits}/${t.nT}`, `monthly plan only ${t.planHits}/${t.nT}`, `<span class="delta">adjusted to ${t.qLabel}</span>`],
+    ['Marketing Cost (FB)', fmtMoney(t.ad), `${fmtPct(t.budgetUse, 0)} of budget ${fmtMoney(t.budget)}`, deltaBadge(t.ad, P.ad, null)],
+    ['% CIR', fmtPct(t.cir, 2), 'marketing cost ÷ sell-in', deltaBadge(t.cir, P.cir, false)],
+    ['ROAS', fmtNum(t.roas, 1), 'sell-in ÷ marketing cost', deltaBadge(t.roas, P.roas, true)],
+    ['Sale Units', fmtInt(t.units), `${fmtPct(t.unitAch, 0)} of unit target ${fmtInt(t.tUnits)}`, deltaBadge(t.units, P.units, true)],
   ];
   document.getElementById('kpi-hero').innerHTML = tiles.map(([l, v, s, d]) =>
     `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div>${d}</div>`).join('');
 
+  // Part 2 — digital view: conversations, their cost and quality
   const chips = [
-    ['Stores on target', `${t.hits}/${t.nT}`, `adjusted · monthly plan only ${t.planHits}/${t.nT}`],
-    ['Sale units', fmtInt(t.units), `${fmtPct(t.unitAch, 0)} target ${fmtInt(t.tUnits)}`],
+    ['FB Messages', fmtInt(t.msg), `${fmtInt(t.msg2)} two-way${momText(t.msg, P.msg, true)}`],
+    ['Cost/Message', fmtMoney(t.cpm), `FB cost ÷ messages${momText(t.cpm, P.cpm, false)}`],
     ['% 2-way / message', fmtPct(t.r2, 0), `${fmtInt(t.msg2)} conversations`],
-    ['% 5-way / 2-way', fmtPct(t.r5, 1), `${fmtInt(t.msg5)} deep conversations`],
-    ['Purchases from msg', fmtInt(t.buy), `${fmtPct(t.buyRate, 2)} / message`],
-    ['FB Comments', fmtInt(t.cmt), `${fmtMoney(t.cpc)} / comment`],
-    ['New followers', fmtInt(t.fol), P.fol ? `${P.fol > t.fol ? '▼' : '▲'} from ${fmtInt(P.fol)} last month` : ''],
+    ['% 5-way / 2-way', fmtPct(t.r5, 1), `${fmtInt(t.msg5)} deep conversations${momText(t.msg5, P.msg5, true)}`],
+    ['Purchases from msg', fmtInt(t.buy), `${fmtPct(t.buyRate, 2)} of messages${momText(t.buy, P.buy, true)}`],
+    ['FB Comments', fmtInt(t.cmt), `${fmtMoney(t.cpc)} / comment${momText(t.cmt, P.cmt, true)}`],
+    ['New followers', fmtInt(t.fol), `fanpage${momText(t.fol, P.fol, true)}`],
   ];
   document.getElementById('kpi-strip').innerHTML = chips.map(([l, v, s]) =>
     `<div class="chip"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
@@ -55,25 +65,6 @@ function renderConcentrationAlert(shops, t) {
     Excluding it, the other stores reach <b>${fmtPct(restAch, 1)} of adjusted target</b> (${restOthers.filter(s => s.met).length}/${restOthers.length} on target),
     ROAS <b>${fmtNum(rest.roas, 1)}</b>, CIR <b>${fmtPct(rest.cir, 2)}</b>, Cost/Message <b>${fmtMoney(rest.cpm)}</b>.</p>
   </div></div>`;
-}
-
-/** Bullet chart: achievement bar vs 100% target tick, axis capped at 160% with overflow marker. */
-function renderBullet(shops) {
-  const CAP = 1.6, el = document.getElementById('bullet');
-  const list = shops.filter(s => s.ach != null).sort((a, b) => b.ach - a.ach);
-  const pos = v => (Math.min(v, CAP) / CAP) * 100;
-  el.innerHTML = list.map(s => {
-    const ok = s.ach >= 1;
-    const tip = `<b>${s.name}</b><br>Revenue ${fmtMoney(s.rev)} / adjusted target ${fmtMoney(Math.max(0, s.tAdj))}<br>Monthly plan ${fmtMoney(s.target)} (${fmtPct(s.achM, 0)})`;
-    return `<div class="b-row" data-tip="${tip.replace(/"/g, '&quot;')}">
-      <div class="b-name">${s.name}</div>
-      <div class="b-track"><div class="b-fill ${ok ? '' : 'under'} ${s.ach > CAP ? 'over' : ''}" style="width:${pos(s.ach)}%"></div>
-        <div class="b-target" style="left:${pos(1)}%"></div></div>
-      <div class="b-val">${ok ? '' : fmtPct(s.ach, 0)}<span class="st ${ok ? 'ok' : 'no'}">${ok ? '✓ met' : '▼ below'}</span>
-        <span class="b-sub">${fmtMoney(s.rev)} / ${fmtMoney(Math.max(0, s.tAdj))}</span></div></div>`;
-  }).join('') + `<div class="b-axis"><span></span><div>${[0, .5, 1, 1.5].map(v =>
-    `<span style="left:${pos(v)}%">${v * 100}%</span>`).join('')}</div><span></span></div>`;
-  Tip.bind(el);
 }
 
 /** Message funnel (single series → one colour) + per-shop conversion ranks. */

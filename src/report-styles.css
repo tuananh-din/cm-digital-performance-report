@@ -310,3 +310,19 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 .export-status { position: absolute; top: 100%; left: 0; margin-top: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .export-status.ok { color: var(--good); } .export-status.err { color: var(--bad); }
 @media (max-width: 640px) { .hero-controls { flex-wrap: wrap; } .exp-btn { font-size: 13px; padding: 0 10px; } }
+
+/* ---------- business-first parts, momentum table ---------- */
+.part-title { display: flex; align-items: center; gap: 14px; margin: 34px 0 14px; padding-top: 18px; border-top: 2px solid var(--border); }
+.part-n { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 20px; font-weight: 800; display: grid; place-items: center; }
+.part-title h2 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.part-title p { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.kpi-strip.m { grid-template-columns: repeat(4, 1fr); margin-top: 0; }
+.chip .lbl.good-t, .chip .lbl.warn-t, .chip .lbl.bad-t { font-weight: 800; }
+.mtable { min-width: 860px; }
+.mtable td:nth-child(n+2) { text-align: right; }
+.spark { width: 54px; height: 22px; vertical-align: middle; }
+.spark rect { fill: var(--q1); } .spark rect.cur { fill: var(--brand); }
+.ins-grid.inner { grid-template-columns: repeat(2, 1fr); margin: 0; }
+.ins-grid.inner .ins { box-shadow: none; background: var(--surface-2); }
+@media (max-width: 1100px) { .kpi-strip.m { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .ins-grid.inner { grid-template-columns: 1fr; } .part-title h2 { font-size: 22px; } }

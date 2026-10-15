@@ -22,9 +22,9 @@ function renderAll() {
   fitSlide();
   renderKpis(t, p);
   renderConcentrationAlert(shops, t);
-  renderBullet(shops);
   renderFunnel(t, shops);
   renderAdjustedSection(m, shops, t);
+  t.momentum = renderMomentum(m, shops);
   renderMatrix(shops, t, pm ? rowsOf(pm) : []);
   renderCharts(shops, t);
   renderAdvancedInsights(shops, t);

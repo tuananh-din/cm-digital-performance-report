@@ -34,6 +34,7 @@ function renderTrendCharts(month) {
     lines: [{ label: 'Target', data: aggs.map(a => a.target), color: C.ink, dashed: true, axis: 'y' }],
     yFmt: money0, tipFmt: { Revenue: v => fmtMoney(v), Target: v => fmtMoney(v) } });
 
-  document.getElementById('trend-note').textContent =
+  const note = document.getElementById('trend-note');
+  if (note) note.textContent =
     `${monthShort(months[0])}–${monthShort(month)} ${month.slice(0, 4)} · number of stores with data changes by month (${aggs.map(a => a.shops).join(' → ')}) — read trends with coverage in mind`;
 }
