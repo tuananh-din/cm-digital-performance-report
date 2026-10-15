@@ -156,7 +156,7 @@ select:focus-visible, button:focus-visible, th:focus-visible { outline: 3px soli
 
 /* ---------- matrix table ---------- */
 .table-wrap { overflow-x: auto; margin: 0 -6px; }
-.matrix { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
 .matrix th { text-align: right; font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 8px 8px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
 .matrix th:first-child, .matrix td:first-child { text-align: left; }
 .matrix th.sorted { color: var(--brand); }
@@ -339,6 +339,10 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 @media (max-width: 1100px) { .kpi-strip.m { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .ins-grid.inner { grid-template-columns: 1fr; } .part-title h2 { font-size: 22px; } }
 
+/* card whose chart grows to the height of its row neighbour */
+.card.fill { display: flex; flex-direction: column; }
+.card.fill .chart-box { flex: 1; min-height: 400px; height: auto; }
+
   </style>
 </head>
 <body>
@@ -474,7 +478,7 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
         </div>
         <div id="funnel" class="funnel"></div>
       </article>
-      <article class="card span-7">
+      <article class="card span-7 fill">
         <div class="card-head">
           <h2>Efficiency Matrix: Cost/Message × Target</h2>
           <p>Bubble size = ad spend · dividers = overall Cost/Message and 100% of adjusted target</p>
@@ -728,8 +732,6 @@ const MATRIX_COLS = [
   { k: 'r2', l: '2-way %', f: v => fmtPct(v, 0) },
   { k: 'r5', l: '5-way/2-way', f: v => fmtPct(v, 0) },
   { k: 'purchase_msg', l: 'Purch. (msg)', f: fmtInt },
-  { k: 'cmt', l: 'Comments', f: fmtInt },
-  { k: 'cpc', l: 'Cost/Cmt', f: v => fmtMoney(v) },
   { k: 'mom', l: 'Rev. MoM', f: v => (v == null ? '<span class="pill">new</span>' : `<span class="${v >= 0 ? 'good-t' : 'bad-t'}">${v >= 0 ? '▲' : '▼'}${Math.abs(v * 100).toFixed(0)}%</span>`) },
 ];
 const matrixSort = { key: 'rev', dir: -1 };
@@ -755,7 +757,7 @@ function renderMatrix(shops, t, prevRows) {
   };
   const body = `<tbody>${sorted.map(s => `<tr>${MATRIX_COLS.map(c => cell(c, s)).join('')}</tr>`).join('')}</tbody>`;
   const totals = { name: 'Total', rev: t.rev, ach: t.ach, achM: t.achM, adCost: t.ad, budgetUse: t.budgetUse, roas: t.roas, cir: t.cir, msgs: t.msg,
-    cpm: t.cpm, r2: t.r2, r5: t.r5, purchase_msg: t.buy, cmt: t.cmt, cpc: t.cpc, mom: null };
+    cpm: t.cpm, r2: t.r2, r5: t.r5, purchase_msg: t.buy, mom: null };
   const foot = `<tfoot><tr>${MATRIX_COLS.map(c => (c.k === 'name' ? '<td>Total</td>' : c.k === 'mom' ? '<td></td>' : c.k === 'ach' ? `<td>${t.hits}/${t.nT} met</td>` : `<td>${c.f(totals[c.k])}</td>`)).join('')}</tr></tfoot>`;
   const table = document.getElementById('matrix');
   table.innerHTML = head + body + foot;
@@ -894,7 +896,7 @@ function makeCombo(id, spec) {
           ticks: { color: C.ink2, maxRotation: spec.rotate ?? 0, minRotation: spec.rotate ?? 0, autoSkip: false, font: { weight: '600' } } },
         y: { stacked: !!spec.stacked, beginAtZero: true, max: spec.yMax, border: { display: false }, grid: { color: C.grid },
           ticks: { callback: spec.yFmt, maxTicksLimit: 5 }, grace: '12%' },
-        y1: { display: hasY1 && !spec.hideY1, position: 'right', min: -(y1Max || 1) * 0.9, max: (y1Max || 1) * 1.15, border: { display: false }, grid: { display: false },
+        y1: { display: hasY1 && spec.hideY1 === false, position: 'right', min: -(y1Max || 1) * 0.9, max: (y1Max || 1) * 1.15, border: { display: false }, grid: { display: false },
           ticks: { callback: v => (v < 0 || v > y1Max * 1.001 || !spec.y1Fmt ? '' : spec.y1Fmt(v)), maxTicksLimit: 6 } },
       },
       plugins: {
@@ -973,7 +975,7 @@ function renderShopCombos(shops) {
   const money0 = v => fmtMoney(v, 0);
 
   makeCombo('c-spend-roas', { ...base,
-    bars: [{ label: 'Ad spend', data: list.map(s => s.adCost), color: C.brand, _label: v => fmtMoney(v, 1) }],
+    bars: [{ label: 'Ad spend', data: list.map(s => s.adCost), color: C.brand, _label: v => Math.round(v / 1e6) + 'M', _insideOnly: true }],
     lines: [{ label: 'ROAS', data: list.map(s => s.roas), color: C.line, _label: v => fmtNum(v, 1) }],
     yFmt: money0, y1Fmt: v => v, tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) } });
 
@@ -989,7 +991,7 @@ function renderShopCombos(shops) {
 
   const byUnits = [...shops].sort((a, b) => n0(b.units) - n0(a.units));
   makeCombo('c-aov-units', { labels: byUnits.map(s => s.name), rotate: 35, barMax: 40, title: i => byUnits[i].name,
-    bars: [{ label: 'Sale units', data: byUnits.map(s => n0(s.units)), color: C.brand, _label: v => fmtInt(v) }],
+    bars: [{ label: 'Sale units', data: byUnits.map(s => n0(s.units)), color: C.brand, _label: v => fmtInt(v), _insideOnly: true }],
     lines: [{ label: 'AOV', data: byUnits.map(s => s.aov), color: C.line, _label: v => fmtMoney(v, 1) }],
     yFmt: v => fmtInt(v), y1Fmt: money0, tipFmt: { 'Sale units': fmtInt, AOV: v => fmtMoney(v) } });
 
@@ -1005,10 +1007,11 @@ function renderShopCombos(shops) {
 }
 
 function renderQuadrant(shops, t) {
-  const C = themeColors(), CAP = 160;
+  // Log y-scale: adjusted achievement spans 17% → 850%, a linear cap would pile every on-target store at the top.
+  const C = themeColors(), YMIN = 10, YMAX = 1000, TICKS = [10, 25, 50, 100, 200, 400, 800];
   const pts = shops.filter(s => s.cpm != null && s.ach != null);
   const maxAd = Math.max(...pts.map(s => s.adCost));
-  const data = pts.map(s => ({ x: s.cpm, y: Math.min(s.ach * 100, CAP), r: 5 + 13 * Math.sqrt(s.adCost / maxAd), s }));
+  const data = pts.map(s => ({ x: s.cpm, y: Math.min(Math.max(s.ach * 100, YMIN), YMAX), r: 5 + 13 * Math.sqrt(s.adCost / maxAd), s }));
   const xMax = Math.ceil(Math.max(...pts.map(s => s.cpm)) / 5000) * 5000 + 5000;
 
   const quadPlugin = {
@@ -1020,9 +1023,10 @@ function renderQuadrant(shops, t) {
       ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(qx, a.top); ctx.lineTo(qx, a.bottom); ctx.moveTo(a.left, qy); ctx.lineTo(a.right, qy); ctx.stroke();
       ctx.font = '700 11px "Be Vietnam Pro"'; ctx.fillStyle = C.muted;
-      ctx.textAlign = 'left'; ctx.fillText('SCALE · cheap & on target', a.left + 8, a.top + 14);
+      // Top-quadrant captions sit just above the 100% divider (bubbles far above target cluster near the top edge)
+      ctx.textAlign = 'left'; ctx.fillText('SCALE · cheap & on target', a.left + 8, qy - 8);
       ctx.fillText('FIX CONVERSION · cheap but below', a.left + 8, a.bottom - 8);
-      ctx.textAlign = 'right'; ctx.fillText('COSTLY but on target', a.right - 8, a.top + 14);
+      ctx.textAlign = 'right'; ctx.fillText('COSTLY but on target', a.right - 8, qy - 8);
       ctx.fillText('ACT NOW · costly & below', a.right - 8, a.bottom - 8);
       ctx.restore();
     },
@@ -1032,8 +1036,7 @@ function renderQuadrant(shops, t) {
       // Place labels top-down; nudge a label below any already-placed box it would collide with.
       const placed = [], LH = 14;
       meta.data.map((el, i) => ({ el, d: data[i] })).sort((a, b) => a.el.y - b.el.y).forEach(({ el, d }) => {
-        const over = d.s.ach * 100 > CAP;
-        const txt = d.s.name + (over ? ' ↑' : '');
+        const txt = d.s.name + (d.s.ach * 100 > YMAX ? ' ↑' : '');
         const w = ctx.measureText(txt).width;
         const right = el.x + d.r + 4 + w < chart.chartArea.right;
         const x0 = right ? el.x + d.r + 4 : el.x - d.r - 4 - w;
@@ -1058,7 +1061,8 @@ function renderQuadrant(shops, t) {
       layout: { padding: { top: 6, right: 10 } },
       scales: {
         x: { min: 0, max: xMax, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: 'Cost / Message (₫)' }, ticks: { callback: v => fmtMoney(v, 0) } },
-        y: { min: 0, max: CAP + 10, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: '% of adjusted target' }, ticks: { callback: v => (v <= CAP ? v + '%' : ''), stepSize: 40 } },
+        y: { type: 'logarithmic', min: YMIN, max: YMAX, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: '% of adjusted target (log scale)' },
+          afterBuildTicks: axis => { axis.ticks = TICKS.map(value => ({ value })); }, ticks: { callback: v => v + '%' } },
       },
       plugins: { tooltip: { displayColors: false, callbacks: {
         title: items => items[0].raw.s.name,
@@ -1338,7 +1342,7 @@ function renderAdvancedInsights(shops, t) {
   if (aovs.length) {
     const hi = aovs[0], lo = aovs[aovs.length - 1];
     cards.push(insightCard('Average order value', `${fmtMoney(lo.aov, 1)} – ${fmtMoney(hi.aov, 1)}`,
-      `highest <b>${hi.name}</b>, lowest <b>${lo.name}</b>. Low-AOV stores need more orders for the same target → push message volume; high-AOV → push lead quality (5-way).`));
+      `highest <b>${hi.name}</b>, lowest <b>${lo.name}</b>. Low-AOV stores need more orders for the same target → push message volume; high-AOV → push lead quality (5-way).`, 'wide'));
   }
 
   // 8. Deep-conversation to purchase

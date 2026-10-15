@@ -104,8 +104,6 @@ const MATRIX_COLS = [
   { k: 'r2', l: '2-way %', f: v => fmtPct(v, 0) },
   { k: 'r5', l: '5-way/2-way', f: v => fmtPct(v, 0) },
   { k: 'purchase_msg', l: 'Purch. (msg)', f: fmtInt },
-  { k: 'cmt', l: 'Comments', f: fmtInt },
-  { k: 'cpc', l: 'Cost/Cmt', f: v => fmtMoney(v) },
   { k: 'mom', l: 'Rev. MoM', f: v => (v == null ? '<span class="pill">new</span>' : `<span class="${v >= 0 ? 'good-t' : 'bad-t'}">${v >= 0 ? '▲' : '▼'}${Math.abs(v * 100).toFixed(0)}%</span>`) },
 ];
 const matrixSort = { key: 'rev', dir: -1 };
@@ -131,7 +129,7 @@ function renderMatrix(shops, t, prevRows) {
   };
   const body = `<tbody>${sorted.map(s => `<tr>${MATRIX_COLS.map(c => cell(c, s)).join('')}</tr>`).join('')}</tbody>`;
   const totals = { name: 'Total', rev: t.rev, ach: t.ach, achM: t.achM, adCost: t.ad, budgetUse: t.budgetUse, roas: t.roas, cir: t.cir, msgs: t.msg,
-    cpm: t.cpm, r2: t.r2, r5: t.r5, purchase_msg: t.buy, cmt: t.cmt, cpc: t.cpc, mom: null };
+    cpm: t.cpm, r2: t.r2, r5: t.r5, purchase_msg: t.buy, mom: null };
   const foot = `<tfoot><tr>${MATRIX_COLS.map(c => (c.k === 'name' ? '<td>Total</td>' : c.k === 'mom' ? '<td></td>' : c.k === 'ach' ? `<td>${t.hits}/${t.nT} met</td>` : `<td>${c.f(totals[c.k])}</td>`)).join('')}</tr></tfoot>`;
   const table = document.getElementById('matrix');
   table.innerHTML = head + body + foot;

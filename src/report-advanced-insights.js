@@ -63,7 +63,7 @@ function renderAdvancedInsights(shops, t) {
   if (aovs.length) {
     const hi = aovs[0], lo = aovs[aovs.length - 1];
     cards.push(insightCard('Average order value', `${fmtMoney(lo.aov, 1)} – ${fmtMoney(hi.aov, 1)}`,
-      `highest <b>${hi.name}</b>, lowest <b>${lo.name}</b>. Low-AOV stores need more orders for the same target → push message volume; high-AOV → push lead quality (5-way).`));
+      `highest <b>${hi.name}</b>, lowest <b>${lo.name}</b>. Low-AOV stores need more orders for the same target → push message volume; high-AOV → push lead quality (5-way).`, 'wide'));
   }
 
   // 8. Deep-conversation to purchase

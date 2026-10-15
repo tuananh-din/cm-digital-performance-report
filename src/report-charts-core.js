@@ -121,7 +121,7 @@ function makeCombo(id, spec) {
           ticks: { color: C.ink2, maxRotation: spec.rotate ?? 0, minRotation: spec.rotate ?? 0, autoSkip: false, font: { weight: '600' } } },
         y: { stacked: !!spec.stacked, beginAtZero: true, max: spec.yMax, border: { display: false }, grid: { color: C.grid },
           ticks: { callback: spec.yFmt, maxTicksLimit: 5 }, grace: '12%' },
-        y1: { display: hasY1 && !spec.hideY1, position: 'right', min: -(y1Max || 1) * 0.9, max: (y1Max || 1) * 1.15, border: { display: false }, grid: { display: false },
+        y1: { display: hasY1 && spec.hideY1 === false, position: 'right', min: -(y1Max || 1) * 0.9, max: (y1Max || 1) * 1.15, border: { display: false }, grid: { display: false },
           ticks: { callback: v => (v < 0 || v > y1Max * 1.001 || !spec.y1Fmt ? '' : spec.y1Fmt(v)), maxTicksLimit: 6 } },
       },
       plugins: {

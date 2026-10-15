@@ -15,7 +15,7 @@ function renderShopCombos(shops) {
   const money0 = v => fmtMoney(v, 0);
 
   makeCombo('c-spend-roas', { ...base,
-    bars: [{ label: 'Ad spend', data: list.map(s => s.adCost), color: C.brand, _label: v => fmtMoney(v, 1) }],
+    bars: [{ label: 'Ad spend', data: list.map(s => s.adCost), color: C.brand, _label: v => Math.round(v / 1e6) + 'M', _insideOnly: true }],
     lines: [{ label: 'ROAS', data: list.map(s => s.roas), color: C.line, _label: v => fmtNum(v, 1) }],
     yFmt: money0, y1Fmt: v => v, tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) } });
 
@@ -31,7 +31,7 @@ function renderShopCombos(shops) {
 
   const byUnits = [...shops].sort((a, b) => n0(b.units) - n0(a.units));
   makeCombo('c-aov-units', { labels: byUnits.map(s => s.name), rotate: 35, barMax: 40, title: i => byUnits[i].name,
-    bars: [{ label: 'Sale units', data: byUnits.map(s => n0(s.units)), color: C.brand, _label: v => fmtInt(v) }],
+    bars: [{ label: 'Sale units', data: byUnits.map(s => n0(s.units)), color: C.brand, _label: v => fmtInt(v), _insideOnly: true }],
     lines: [{ label: 'AOV', data: byUnits.map(s => s.aov), color: C.line, _label: v => fmtMoney(v, 1) }],
     yFmt: v => fmtInt(v), y1Fmt: money0, tipFmt: { 'Sale units': fmtInt, AOV: v => fmtMoney(v) } });
 
@@ -47,10 +47,11 @@ function renderShopCombos(shops) {
 }
 
 function renderQuadrant(shops, t) {
-  const C = themeColors(), CAP = 160;
+  // Log y-scale: adjusted achievement spans 17% → 850%, a linear cap would pile every on-target store at the top.
+  const C = themeColors(), YMIN = 10, YMAX = 1000, TICKS = [10, 25, 50, 100, 200, 400, 800];
   const pts = shops.filter(s => s.cpm != null && s.ach != null);
   const maxAd = Math.max(...pts.map(s => s.adCost));
-  const data = pts.map(s => ({ x: s.cpm, y: Math.min(s.ach * 100, CAP), r: 5 + 13 * Math.sqrt(s.adCost / maxAd), s }));
+  const data = pts.map(s => ({ x: s.cpm, y: Math.min(Math.max(s.ach * 100, YMIN), YMAX), r: 5 + 13 * Math.sqrt(s.adCost / maxAd), s }));
   const xMax = Math.ceil(Math.max(...pts.map(s => s.cpm)) / 5000) * 5000 + 5000;
 
   const quadPlugin = {
@@ -62,9 +63,10 @@ function renderQuadrant(shops, t) {
       ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(qx, a.top); ctx.lineTo(qx, a.bottom); ctx.moveTo(a.left, qy); ctx.lineTo(a.right, qy); ctx.stroke();
       ctx.font = '700 11px "Be Vietnam Pro"'; ctx.fillStyle = C.muted;
-      ctx.textAlign = 'left'; ctx.fillText('SCALE · cheap & on target', a.left + 8, a.top + 14);
+      // Top-quadrant captions sit just above the 100% divider (bubbles far above target cluster near the top edge)
+      ctx.textAlign = 'left'; ctx.fillText('SCALE · cheap & on target', a.left + 8, qy - 8);
       ctx.fillText('FIX CONVERSION · cheap but below', a.left + 8, a.bottom - 8);
-      ctx.textAlign = 'right'; ctx.fillText('COSTLY but on target', a.right - 8, a.top + 14);
+      ctx.textAlign = 'right'; ctx.fillText('COSTLY but on target', a.right - 8, qy - 8);
       ctx.fillText('ACT NOW · costly & below', a.right - 8, a.bottom - 8);
       ctx.restore();
     },
@@ -74,8 +76,7 @@ function renderQuadrant(shops, t) {
       // Place labels top-down; nudge a label below any already-placed box it would collide with.
       const placed = [], LH = 14;
       meta.data.map((el, i) => ({ el, d: data[i] })).sort((a, b) => a.el.y - b.el.y).forEach(({ el, d }) => {
-        const over = d.s.ach * 100 > CAP;
-        const txt = d.s.name + (over ? ' ↑' : '');
+        const txt = d.s.name + (d.s.ach * 100 > YMAX ? ' ↑' : '');
         const w = ctx.measureText(txt).width;
         const right = el.x + d.r + 4 + w < chart.chartArea.right;
         const x0 = right ? el.x + d.r + 4 : el.x - d.r - 4 - w;
@@ -100,7 +101,8 @@ function renderQuadrant(shops, t) {
       layout: { padding: { top: 6, right: 10 } },
       scales: {
         x: { min: 0, max: xMax, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: 'Cost / Message (₫)' }, ticks: { callback: v => fmtMoney(v, 0) } },
-        y: { min: 0, max: CAP + 10, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: '% of adjusted target' }, ticks: { callback: v => (v <= CAP ? v + '%' : ''), stepSize: 40 } },
+        y: { type: 'logarithmic', min: YMIN, max: YMAX, grid: { color: C.grid }, border: { display: false }, title: { display: true, text: '% of adjusted target (log scale)' },
+          afterBuildTicks: axis => { axis.ticks = TICKS.map(value => ({ value })); }, ticks: { callback: v => v + '%' } },
       },
       plugins: { tooltip: { displayColors: false, callbacks: {
         title: items => items[0].raw.s.name,

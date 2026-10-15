@@ -144,7 +144,7 @@ select:focus-visible, button:focus-visible, th:focus-visible { outline: 3px soli
 
 /* ---------- matrix table ---------- */
 .table-wrap { overflow-x: auto; margin: 0 -6px; }
-.matrix { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
 .matrix th { text-align: right; font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 8px 8px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
 .matrix th:first-child, .matrix td:first-child { text-align: left; }
 .matrix th.sorted { color: var(--brand); }
@@ -326,3 +326,7 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 .ins-grid.inner .ins { box-shadow: none; background: var(--surface-2); }
 @media (max-width: 1100px) { .kpi-strip.m { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .ins-grid.inner { grid-template-columns: 1fr; } .part-title h2 { font-size: 22px; } }
+
+/* card whose chart grows to the height of its row neighbour */
+.card.fill { display: flex; flex-direction: column; }
+.card.fill .chart-box { flex: 1; min-height: 400px; height: auto; }
