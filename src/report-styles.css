@@ -330,3 +330,10 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 /* card whose chart grows to the height of its row neighbour */
 .card.fill { display: flex; flex-direction: column; }
 .card.fill .chart-box { flex: 1; min-height: 400px; height: auto; }
+
+/* Month / Quarter switch for the summary slide */
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.seg button { font: inherit; font-size: 13px; font-weight: 700; min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.seg button.on { background: var(--brand-tint); color: var(--brand); }
+.seg button:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent); outline-offset: 1px; }
+@media (max-width: 640px) { .export-btns { flex-wrap: wrap; } }

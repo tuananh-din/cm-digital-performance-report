@@ -4,6 +4,7 @@ Usage:  python3 build-monthly-report.py ["CM - MONTHLY REPORT _data_media.csv"]
 Output: bao-cao-digital-performance-<latest month>.html  (CSS, JS and data inlined; Chart.js + font via CDN)
         index.html                                       (copy of the latest report, served by GitHub Pages)
         slide-digital-performance-<latest month>.png     (1-slide summary, 3200x1800, needs Google Chrome)
+        slide-digital-performance-<year>-Q<n>.png        (same slide for the quarter of the latest month)
 """
 import csv
 import json
@@ -22,7 +23,7 @@ CHROME_CANDIDATES = [
 ]
 JS_ORDER = [
     "report-data-utils.js", "report-sections-render.js", "report-charts-core.js", "report-charts-trend.js",
-    "report-charts-shop.js", "report-adjusted-target.js", "report-store-momentum.js", "report-advanced-insights.js", "report-insights.js", "report-slide-summary.js", "report-slide-export.js", "report-main.js",
+    "report-charts-shop.js", "report-adjusted-target.js", "report-store-momentum.js", "report-advanced-insights.js", "report-insights.js", "report-slide-context.js", "report-slide-summary.js", "report-slide-export.js", "report-main.js",
 ]
 
 # report field -> CSV column
@@ -82,15 +83,17 @@ def build(csv_path):
     (ROOT / "index.html").write_text(html, encoding="utf-8")  # GitHub Pages entry = latest month
     print(f"{len(rows)} rows, months {min(r['month'] for r in rows)}..{latest} -> {out.name} (+ index.html)")
     export_slide_png(out, ROOT / f"slide-digital-performance-{latest.replace('.', '-')}.png")
+    quarter = f"{latest[:4]}-Q{(int(latest[5:]) - 1) // 3 + 1}"
+    export_slide_png(out, ROOT / f"slide-digital-performance-{quarter}.png", "#slide-q")  # quarter-to-date view
 
 
-def export_slide_png(html_path, png_path):
-    """Screenshot the report's '#slide' view (1600x900 @2x) with headless Chrome; skipped if Chrome is missing."""
+def export_slide_png(html_path, png_path, view="#slide"):
+    """Screenshot the report's slide view ('#slide' month, '#slide-q' quarter; 1600x900 @2x) with headless Chrome."""
     chrome = next((c for c in CHROME_CANDIDATES if c and Path(c).exists()), None)
     if not chrome:
         print("Chrome not found -> skip PNG export (open the HTML and screenshot the slide instead)")
         return
-    url = "file://" + quote(str(html_path)) + "#slide"
+    url = "file://" + quote(str(html_path)) + view
     cmd = [chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
            "--window-size=1600,900", "--virtual-time-budget=10000", f"--screenshot={png_path}", url]
     try:

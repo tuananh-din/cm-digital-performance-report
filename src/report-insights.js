@@ -56,6 +56,26 @@ const MONTH_NOTES = {
   },
 };
 
+// Quarter notes for the quarter view of the slide (key 'YYYY-Qn'); quarters without notes use autoTakeaways().
+const QUARTER_NOTES = {
+  '2026-Q3': {
+    slide: [
+      ['target', 'Q3 revenue 112% of target; 7/13 stores met',
+        '₫78.72B vs ₫70.42B. Below: BigMi, H&T, CPS, Giang Chi, Viettel Store; Domotek at 97%. Main cause: stock shortages of key models.',
+        'Prioritise high-volume MDs to keep beating target in Q4.'],
+      ['efficiency', 'CIR 1.35% → 0.58% as spend came down',
+        'Spend ₫265M → ₫197M while revenue grew. Q3 CIR 0.86% (target 1%); Cost/Message ₫20.8K, 17% under the ₫25K target.',
+        'Keep the current setup; scale only where stock is available.'],
+      ['budget', 'CIR driven by funding source & sales channel',
+        'BigMi\'s CIR (1.74%) includes the Qrevo 2 Pro hero budget run in Jul–Aug. Mi360\'s and Hotek\'s low CIR includes e-commerce sales.',
+        'Judge stores on offline impact, not CIR alone.'],
+      ['funnel', 'Online sales flow is the lever for Q4',
+        '414 inbox orders in Q3. Danke has the strongest online sales flow; Cường Phát has the most room to improve.',
+        'Roll out Danke\'s sales flow; test new solutions for small MDs & key dealers.'],
+    ],
+  },
+};
+
 const TAG_LABEL = {
   scale: 'SCALE', fix: 'FIX', optimize: 'OPTIMIZE', verify: 'VERIFY', keep: 'MAINTAIN',
   target: 'TARGET', budget: 'BUDGET', funnel: 'FUNNEL', efficiency: 'EFFICIENCY',

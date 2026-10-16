@@ -21,6 +21,10 @@
         <div class="export-box">
           <span class="export-label">Summary slide</span>
           <div class="export-btns">
+            <div class="seg" id="slide-mode" role="group" aria-label="Slide period">
+              <button type="button" data-mode="month">Month</button>
+              <button type="button" data-mode="quarter">Quarter</button>
+            </div>
             <button class="exp-btn primary" id="btn-png" type="button" title="Download the slide as a 3200×1800 PNG">⬇ Download PNG</button>
             <button class="exp-btn" id="btn-copy" type="button" title="Copy the slide image to the clipboard">⧉ Copy PNG</button>
           </div>
@@ -44,7 +48,7 @@
         <div class="s-body">
           <div class="s-left">
             <div class="s-panel s-a">
-              <h3>Monthly Revenue vs Adjusted Target by Store</h3>
+              <h3 id="s-a-title">Monthly Revenue vs Adjusted Target by Store</h3>
               <div class="s-legend" id="s-t-legend"></div>
               <div class="s-chart"><canvas id="s-c-target"></canvas></div>
             </div>

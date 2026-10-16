@@ -46,7 +46,7 @@ function statusPills(list) {
     afterDatasetsDraw(chart) {
       const C = themeColors(), { ctx, chartArea } = chart;
       const bar = chart.data.datasets.findIndex(d => d.type === 'bar');
-      const tick = chart.data.datasets.findIndex(d => d.label === 'Adjusted target');
+      const tick = chart.data.datasets.findIndex(d => d.type === 'line'); // target tick = first line dataset
       const bars = chart.getDatasetMeta(bar).data, ticks = chart.getDatasetMeta(tick).data;
       ctx.save();
       list.forEach((s, i) => {
@@ -62,27 +62,30 @@ function statusPills(list) {
 /** Bar+tick combo: month revenue vs adjusted target (ink tick) and month plan (grey tick). */
 function renderAdjustedCombo(canvasId, legendId, shops, opts = {}) {
   const C = themeColors(), light = cssVar('--q1');
+  const per = opts.periodShort || opts.monthShort;              // 'Sep' or 'Q3'
+  const tgt = opts.targetName || 'Adjusted target';             // quarter view: 'Q3 target'
+  const showPlan = opts.showPlan !== false;                     // grey monthly-plan tick (month view only)
   const list = shops.filter(s => s.target).sort((a, b) => b.rev - a.rev);
   const name = opts.shortNames ? (n => n.replace(/\s*Smart\s?Home$/i, '')) : (n => n);
   // Keep one outlier from flattening everyone else: cap the axis, the bar label keeps the real value.
   const sorted = list.map(s => s.rev).sort((a, b) => b - a);
   const others = Math.max(sorted[1] || 0, ...list.map(s => Math.max(s.tAdj, s.target)));
   const yMax = sorted[0] > others * 1.6 ? others * 1.25 : undefined;
+  const lines = [{ label: tgt, data: list.map(s => Math.max(0, s.tAdj)), color: C.ink, axis: 'y', marker: 'tick' }];
+  if (showPlan) lines.push({ label: 'Monthly plan', data: list.map(s => s.target), color: C.muted, axis: 'y', marker: 'tick' });
   makeCombo(canvasId, {
     labels: list.map(s => name(s.name)), rotate: opts.rotate ?? 0, barMax: 48, minSlot: 30, yMax,
-    title: i => `${list[i].name} · ${list[i].met ? 'on' : 'below'} adjusted target`,
-    bars: [{ label: `${opts.monthShort} revenue`, data: list.map(s => s.rev), color: list.map(s => (s.met ? C.brand : light)),
+    title: i => `${list[i].name} · ${list[i].met ? 'on' : 'below'} ${tgt.toLowerCase()}`,
+    bars: [{ label: `${per} revenue`, data: list.map(s => s.rev), color: list.map(s => (s.met ? C.brand : light)),
       _label: v => fmtMoney(v, 1) + (yMax && v > yMax ? '↑' : ''), _insideOnly: true }],
-    lines: [
-      { label: 'Adjusted target', data: list.map(s => Math.max(0, s.tAdj)), color: C.ink, axis: 'y', marker: 'tick' },
-      { label: 'Monthly plan', data: list.map(s => s.target), color: C.muted, axis: 'y', marker: 'tick' },
-    ],
+    lines,
     yFmt: v => fmtMoney(v, 0), plugins: [statusPills(list)],
-    tipFmt: { [`${opts.monthShort} revenue`]: v => fmtMoney(v), 'Adjusted target': v => fmtMoney(v), 'Monthly plan': v => fmtMoney(v) },
+    tipFmt: { [`${per} revenue`]: v => fmtMoney(v), [tgt]: v => fmtMoney(v), 'Monthly plan': v => fmtMoney(v) },
   });
   if (legendId) document.getElementById(legendId).innerHTML = comboLegend([
-    [`${opts.monthShort} revenue · met`, C.brand, 'bar'], [`${opts.monthShort} revenue · below`, light, 'bar'],
-    [`Adjusted target = ${opts.qLabel} target − ${opts.priorLabel || 'prior'} revenue`, C.ink, 'line'], ['Monthly plan', C.muted, 'line']]);
+    [`${per} revenue · met`, C.brand, 'bar'], [`${per} revenue · below`, light, 'bar'],
+    [opts.targetLegend || `Adjusted target = ${opts.qLabel} target − ${opts.priorLabel || 'prior'} revenue`, C.ink, 'line'],
+    ...(showPlan ? [['Monthly plan', C.muted, 'line']] : [])]);
 }
 
 /** Detail section: KPI chips, combo chart and the adjusted-target table. */

@@ -343,6 +343,13 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
 .card.fill { display: flex; flex-direction: column; }
 .card.fill .chart-box { flex: 1; min-height: 400px; height: auto; }
 
+/* Month / Quarter switch for the summary slide */
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.seg button { font: inherit; font-size: 13px; font-weight: 700; min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.seg button.on { background: var(--brand-tint); color: var(--brand); }
+.seg button:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent); outline-offset: 1px; }
+@media (max-width: 640px) { .export-btns { flex-wrap: wrap; } }
+
   </style>
 </head>
 <body>
@@ -353,6 +360,10 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
         <div class="export-box">
           <span class="export-label">Summary slide</span>
           <div class="export-btns">
+            <div class="seg" id="slide-mode" role="group" aria-label="Slide period">
+              <button type="button" data-mode="month">Month</button>
+              <button type="button" data-mode="quarter">Quarter</button>
+            </div>
             <button class="exp-btn primary" id="btn-png" type="button" title="Download the slide as a 3200×1800 PNG">⬇ Download PNG</button>
             <button class="exp-btn" id="btn-copy" type="button" title="Copy the slide image to the clipboard">⧉ Copy PNG</button>
           </div>
@@ -376,7 +387,7 @@ body.slide-only .slide { border-radius: 0; box-shadow: none; border: 0; }
         <div class="s-body">
           <div class="s-left">
             <div class="s-panel s-a">
-              <h3>Monthly Revenue vs Adjusted Target by Store</h3>
+              <h3 id="s-a-title">Monthly Revenue vs Adjusted Target by Store</h3>
               <div class="s-legend" id="s-t-legend"></div>
               <div class="s-chart"><canvas id="s-c-target"></canvas></div>
             </div>
@@ -1137,7 +1148,7 @@ function statusPills(list) {
     afterDatasetsDraw(chart) {
       const C = themeColors(), { ctx, chartArea } = chart;
       const bar = chart.data.datasets.findIndex(d => d.type === 'bar');
-      const tick = chart.data.datasets.findIndex(d => d.label === 'Adjusted target');
+      const tick = chart.data.datasets.findIndex(d => d.type === 'line'); // target tick = first line dataset
       const bars = chart.getDatasetMeta(bar).data, ticks = chart.getDatasetMeta(tick).data;
       ctx.save();
       list.forEach((s, i) => {
@@ -1153,27 +1164,30 @@ function statusPills(list) {
 /** Bar+tick combo: month revenue vs adjusted target (ink tick) and month plan (grey tick). */
 function renderAdjustedCombo(canvasId, legendId, shops, opts = {}) {
   const C = themeColors(), light = cssVar('--q1');
+  const per = opts.periodShort || opts.monthShort;              // 'Sep' or 'Q3'
+  const tgt = opts.targetName || 'Adjusted target';             // quarter view: 'Q3 target'
+  const showPlan = opts.showPlan !== false;                     // grey monthly-plan tick (month view only)
   const list = shops.filter(s => s.target).sort((a, b) => b.rev - a.rev);
   const name = opts.shortNames ? (n => n.replace(/\s*Smart\s?Home$/i, '')) : (n => n);
   // Keep one outlier from flattening everyone else: cap the axis, the bar label keeps the real value.
   const sorted = list.map(s => s.rev).sort((a, b) => b - a);
   const others = Math.max(sorted[1] || 0, ...list.map(s => Math.max(s.tAdj, s.target)));
   const yMax = sorted[0] > others * 1.6 ? others * 1.25 : undefined;
+  const lines = [{ label: tgt, data: list.map(s => Math.max(0, s.tAdj)), color: C.ink, axis: 'y', marker: 'tick' }];
+  if (showPlan) lines.push({ label: 'Monthly plan', data: list.map(s => s.target), color: C.muted, axis: 'y', marker: 'tick' });
   makeCombo(canvasId, {
     labels: list.map(s => name(s.name)), rotate: opts.rotate ?? 0, barMax: 48, minSlot: 30, yMax,
-    title: i => `${list[i].name} · ${list[i].met ? 'on' : 'below'} adjusted target`,
-    bars: [{ label: `${opts.monthShort} revenue`, data: list.map(s => s.rev), color: list.map(s => (s.met ? C.brand : light)),
+    title: i => `${list[i].name} · ${list[i].met ? 'on' : 'below'} ${tgt.toLowerCase()}`,
+    bars: [{ label: `${per} revenue`, data: list.map(s => s.rev), color: list.map(s => (s.met ? C.brand : light)),
       _label: v => fmtMoney(v, 1) + (yMax && v > yMax ? '↑' : ''), _insideOnly: true }],
-    lines: [
-      { label: 'Adjusted target', data: list.map(s => Math.max(0, s.tAdj)), color: C.ink, axis: 'y', marker: 'tick' },
-      { label: 'Monthly plan', data: list.map(s => s.target), color: C.muted, axis: 'y', marker: 'tick' },
-    ],
+    lines,
     yFmt: v => fmtMoney(v, 0), plugins: [statusPills(list)],
-    tipFmt: { [`${opts.monthShort} revenue`]: v => fmtMoney(v), 'Adjusted target': v => fmtMoney(v), 'Monthly plan': v => fmtMoney(v) },
+    tipFmt: { [`${per} revenue`]: v => fmtMoney(v), [tgt]: v => fmtMoney(v), 'Monthly plan': v => fmtMoney(v) },
   });
   if (legendId) document.getElementById(legendId).innerHTML = comboLegend([
-    [`${opts.monthShort} revenue · met`, C.brand, 'bar'], [`${opts.monthShort} revenue · below`, light, 'bar'],
-    [`Adjusted target = ${opts.qLabel} target − ${opts.priorLabel || 'prior'} revenue`, C.ink, 'line'], ['Monthly plan', C.muted, 'line']]);
+    [`${per} revenue · met`, C.brand, 'bar'], [`${per} revenue · below`, light, 'bar'],
+    [opts.targetLegend || `Adjusted target = ${opts.qLabel} target − ${opts.priorLabel || 'prior'} revenue`, C.ink, 'line'],
+    ...(showPlan ? [['Monthly plan', C.muted, 'line']] : [])]);
 }
 
 /** Detail section: KPI chips, combo chart and the adjusted-target table. */
@@ -1415,6 +1429,26 @@ const MONTH_NOTES = {
   },
 };
 
+// Quarter notes for the quarter view of the slide (key 'YYYY-Qn'); quarters without notes use autoTakeaways().
+const QUARTER_NOTES = {
+  '2026-Q3': {
+    slide: [
+      ['target', 'Q3 revenue 112% of target; 7/13 stores met',
+        '₫78.72B vs ₫70.42B. Below: BigMi, H&T, CPS, Giang Chi, Viettel Store; Domotek at 97%. Main cause: stock shortages of key models.',
+        'Prioritise high-volume MDs to keep beating target in Q4.'],
+      ['efficiency', 'CIR 1.35% → 0.58% as spend came down',
+        'Spend ₫265M → ₫197M while revenue grew. Q3 CIR 0.86% (target 1%); Cost/Message ₫20.8K, 17% under the ₫25K target.',
+        'Keep the current setup; scale only where stock is available.'],
+      ['budget', 'CIR driven by funding source & sales channel',
+        'BigMi\'s CIR (1.74%) includes the Qrevo 2 Pro hero budget run in Jul–Aug. Mi360\'s and Hotek\'s low CIR includes e-commerce sales.',
+        'Judge stores on offline impact, not CIR alone.'],
+      ['funnel', 'Online sales flow is the lever for Q4',
+        '414 inbox orders in Q3. Danke has the strongest online sales flow; Cường Phát has the most room to improve.',
+        'Roll out Danke\'s sales flow; test new solutions for small MDs & key dealers.'],
+    ],
+  },
+};
+
 const TAG_LABEL = {
   scale: 'SCALE', fix: 'FIX', optimize: 'OPTIMIZE', verify: 'VERIFY', keep: 'MAINTAIN',
   target: 'TARGET', budget: 'BUDGET', funnel: 'FUNNEL', efficiency: 'EFFICIENCY',
@@ -1501,19 +1535,77 @@ function renderQuality(month, shops) {
   document.getElementById('quality').innerHTML = items.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No anomalies detected.</li>';
 }
 
+// ---------- Slide period contexts: the same 1-page slide rendered for a month or for its quarter ----------
+// A context carries everything the slide needs (stores, totals, comparison period, labels, notes), so
+// renderSlide() does not care whether it is showing "Sep 2026" or "Q3 2026".
+
+const SUM_FIELDS = ['target', 'revenue', 'units', 't_units', 'units_o2o', 'contacts', 'contacts_org', 'contacts_paid',
+  'budget', 'ad', 'msg', 'msg2', 'msg5', 'msg_org', 'msg_cmt', 'purchase_msg', 'cmt', 'fol'];
+
+const quarterKey = month => ({ y: month.slice(0, 4), q: Math.ceil(+month.slice(5) / 3) });
+const monthsOfQuarter = (y, q) => MONTHS.filter(m => m.slice(0, 4) === String(y) && Math.ceil(+m.slice(5) / 3) === q);
+
+/** One synthetic row per store with every additive field summed over `months` (ratios are re-derived later). */
+function storeRowsOver(months) {
+  const by = {};
+  RAW_ROWS.filter(r => months.includes(r.month)).forEach(r => {
+    const o = by[r.shop] || (by[r.shop] = { month: months[months.length - 1], shop: r.shop, tier: r.tier, has_source: r.has_source });
+    SUM_FIELDS.forEach(k => { if (r[k] != null) o[k] = (o[k] || 0) + r[k]; });
+  });
+  return Object.values(by);
+}
+
+function monthSlideContext(month, shops, t) {
+  const pm = prevMonth(month);
+  return {
+    kind: 'month', fileKey: month.replace('.', '-'), label: monthLabel(month), prevLabel: pm ? monthLabel(pm) : '',
+    prevShort: pm ? monthShort(pm) : '', shops, t, p: pm ? aggregate(rowsOf(pm)) : null,
+    reportName: 'Monthly report', scope: `target adjusted to ${t.qLabel} plan`,
+    storesSub: `monthly plan only: ${t.planHits}/${t.nT}`,
+    chartTitle: 'Monthly Revenue vs Adjusted Target by Store',
+    combo: { periodShort: monthShort(month), qLabel: t.qLabel, priorLabel: t.priorLabel },
+    notes: MONTH_NOTES[month],
+  };
+}
+
+/** Quarter-to-date of the selected month, compared with the same number of months of the previous quarter. */
+function quarterSlideContext(month) {
+  const { y, q } = quarterKey(month);
+  const qm = quarterMonths(month);
+  const partial = qm.length < 3;
+  const shops = storeRowsOver(qm).map(shopMetrics);
+  shops.forEach(s => Object.assign(s, { achM: s.ach, tAdj: n0(s.target), met: s.target ? s.rev >= s.target : null, gap: n0(s.target) - s.rev }));
+  const t = aggregate(storeRowsOver(qm));
+  Object.assign(t, { hits: shops.filter(s => s.met).length, nT: shops.filter(s => s.target).length });
+  const pq = q === 1 ? { y: +y - 1, q: 4 } : { y, q: q - 1 };
+  const pm = monthsOfQuarter(pq.y, pq.q).slice(0, qm.length); // like-for-like when the quarter is not finished
+  const range = `${monthShort(qm[0])}–${monthShort(qm[qm.length - 1])}`;
+  return {
+    kind: 'quarter', fileKey: `${y}-Q${q}`, label: `Q${q} ${y}${partial ? ' (QTD)' : ''}`,
+    prevLabel: pm.length ? `Q${pq.q} ${pq.y}` : '', prevShort: pm.length ? `Q${pq.q}` : '',
+    shops, t, p: pm.length ? aggregate(RAW_ROWS.filter(r => pm.includes(r.month))) : null,
+    reportName: 'Quarterly report', scope: `${range} · quarter target = sum of monthly plans`,
+    storesSub: `${fmtPct(t.ach, 0)} of ${fmtMoney(t.target)} target`,
+    chartTitle: 'Quarterly Revenue vs Target by Store',
+    combo: { periodShort: `Q${q}`, targetName: `Q${q} target`, targetLegend: `Q${q} target (sum of monthly plans)`, showPlan: false },
+    notes: partial ? null : QUARTER_NOTES[`${y}-Q${q}`],
+  };
+}
+
 // ---------- One-slide (16:9, 1600×900) executive summary at the top of the report ----------
 // Open the report with "#slide" to get only the slide at native size (used for PNG export).
 
 const SLIDE_W = 1600, SLIDE_H = 900;
-const SLIDE_ONLY = location.hash === '#slide';
+const SLIDE_ONLY = location.hash.startsWith('#slide');   // '#slide' = month slide, '#slide-q' = quarter slide
 
-function renderSlide(month, shops, t) {
-  const pm = prevMonth(month);
-  const p = pm ? aggregate(rowsOf(pm)) : null;
-  const ps = pm ? monthShort(pm) : '';
-  document.getElementById('s-eyebrow').textContent = `Channel Marketing · ${monthLabel(month)}`;
+/** Render the slide for a period context (see report-slide-context.js): a month or its quarter. */
+function renderSlide(ctx) {
+  const { shops, t, p } = ctx;
+  const ps = ctx.prevShort;
+  document.getElementById('s-eyebrow').textContent = `Channel Marketing · ${ctx.label}`;
   document.getElementById('s-period').innerHTML =
-    `Monthly report · ${monthLabel(month)}${pm ? ` vs ${monthLabel(pm)}` : ''}<br><span>${t.shops} stores · FB Ads + store revenue · target adjusted to ${t.qLabel} plan</span>`;
+    `${ctx.reportName} · ${ctx.label}${ctx.prevLabel ? ` vs ${ctx.prevLabel}` : ''}<br><span>${t.shops} stores · FB Ads + store revenue · ${ctx.scope}</span>`;
+  document.getElementById('s-a-title').textContent = ctx.chartTitle;
 
   const mom = (cur, prev, goodUp) => {
     const d = pctChange(cur, prev);
@@ -1525,7 +1617,7 @@ function renderSlide(month, shops, t) {
   const kpis = [
     ['Amount Spent', fmtMoney(t.ad), vs(t.ad, p && p.ad, v => fmtMoney(v), null)],
     ['Revenue', fmtMoney(t.rev), vs(t.rev, p && p.rev, v => fmtMoney(v), true)],
-    ['Stores on Target', `${t.hits}/${t.nT}`, `monthly plan only: ${t.planHits}/${t.nT}`],
+    ['Stores on Target', `${t.hits}/${t.nT}`, ctx.storesSub],
     ['ROAS', fmtNum(t.roas, 1), vs(t.roas, p && p.roas, v => fmtNum(v, 1), true)],
     ['FB Messages', fmtInt(t.msg), vs(t.msg, p && p.msg, fmtInt, true)],
     ['Cost/Message', fmtMoney(t.cpm), vs(t.cpm, p && p.cpm, v => fmtMoney(v), false)],
@@ -1533,7 +1625,7 @@ function renderSlide(month, shops, t) {
   document.getElementById('s-kpis').innerHTML = kpis.map(([l, v, s]) =>
     `<div class="s-kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
 
-  // Compact message funnel with month-over-month change per step
+  // Compact message funnel with the change vs the comparison period per step
   const steps = [['Messages', t.msg, p && p.msg], ['2-way', t.msg2, p && p.msg2], ['5-way', t.msg5, p && p.msg5], ['Purchases', t.buy, p && p.buy]];
   const conv = ['', `${fmtPct(t.r2, 0)} of msg`, `${fmtPct(t.r5, 1)} of 2-way`, `${fmtPct(div(t.buy, t.msg5), 1)} of 5-way`];
   document.getElementById('s-funnel').innerHTML = steps.map(([l, v, pv], i) => `
@@ -1542,7 +1634,7 @@ function renderSlide(month, shops, t) {
       <span class="sf-v">${fmtInt(v)} ${mom(v, pv, true)}<em>${conv[i]}</em></span></div>`).join('');
 
   // Key takeaways: hand-written insight blocks [tag, headline, detail, action], else the top auto cards
-  const note = MONTH_NOTES[month];
+  const note = ctx.notes;
   const items = note && note.slide ? note.slide
     : autoTakeaways(shops, t).slice(0, 4).map(([n, tag, txt, act]) => [tag, n, txt, act]);
   document.getElementById('s-takeaway').innerHTML = items.map(([tag, head, txt, act], i) => `
@@ -1550,22 +1642,22 @@ function renderSlide(month, shops, t) {
       <p>${txt}</p><div class="st-act">→ ${act}</div></div>`).join('');
 
   if (typeof Chart === 'undefined') return;
-  renderSlideCharts(month, shops, t);
+  renderSlideCharts(ctx);
 }
 
 const slideName = n => n.replace(/\s*Smart\s?Home$/i, ''); // keep x labels short on the slide
 
-function renderSlideCharts(month, shops, t) {
-  const C = themeColors();
-  // A. Month revenue vs month target adjusted to the quarter plan
-  renderAdjustedCombo('s-c-target', 's-t-legend', shops,
-    { monthShort: monthShort(month), qLabel: t.qLabel, priorLabel: t.priorLabel, shortNames: true });
+function renderSlideCharts(ctx) {
+  const C = themeColors(), shops = ctx.shops;
+  const inside = ctx.kind === 'quarter'; // 13 stores: labels above narrow bars would collide with the line pills
+  // A. Period revenue vs target (month: adjusted to the quarter plan · quarter: quarter target)
+  renderAdjustedCombo('s-c-target', 's-t-legend', shops, { ...ctx.combo, shortNames: true });
 
   // B. Spent & ROAS by store
   const bySpend = [...shops].sort((a, b) => b.adCost - a.adCost);
   makeCombo('s-c-spend', {
     labels: bySpend.map(s => slideName(s.name)), rotate: 30, minSlot: 30, barMax: 34, title: i => bySpend[i].name, hideY1: true,
-    bars: [{ label: 'Ad spend', data: bySpend.map(s => s.adCost), color: C.brand, _label: v => Math.round(v / 1e6) + 'M' }],
+    bars: [{ label: 'Ad spend', data: bySpend.map(s => s.adCost), color: C.brand, _label: v => Math.round(v / 1e6) + 'M', _insideOnly: inside }],
     lines: [{ label: 'ROAS', data: bySpend.map(s => s.roas), color: C.line, _label: v => fmtNum(v, 0) }],
     yFmt: v => fmtMoney(v, 0), y1Fmt: v => v, tipFmt: { 'Ad spend': v => fmtMoney(v), ROAS: v => fmtNum(v, 1) },
   });
@@ -1574,7 +1666,7 @@ function renderSlideCharts(month, shops, t) {
   const byMsg = [...shops].sort((a, b) => b.msgs - a.msgs);
   makeCombo('s-c-msg', {
     labels: byMsg.map(s => slideName(s.name)), rotate: 30, minSlot: 30, barMax: 34, title: i => byMsg[i].name, hideY1: true,
-    bars: [{ label: 'FB Messages', data: byMsg.map(s => s.msgs), color: C.brand, _label: v => (v >= 1000 ? (v / 1000).toFixed(1) + 'K' : fmtInt(v)) }],
+    bars: [{ label: 'FB Messages', data: byMsg.map(s => s.msgs), color: C.brand, _label: v => (v >= 1000 ? (v / 1000).toFixed(1) + 'K' : fmtInt(v)), _insideOnly: inside }],
     lines: [{ label: 'Cost/Message', data: byMsg.map(s => s.cpm), color: C.line, _label: v => fmtMoney(v, 1) }],
     yFmt: v => fmtInt(v), y1Fmt: v => fmtMoney(v, 0), tipFmt: { 'FB Messages': fmtInt, 'Cost/Message': v => fmtMoney(v) },
   });
@@ -1660,7 +1752,8 @@ function initSlideExport() {
     const blob = await renderSlidePng();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `CM-Digital-Performance-${state.month.replace('.', '-')}.png`;
+    const key = state.slideMode === 'quarter' ? (({ y, q }) => `${y}-Q${q}`)(quarterKey(state.month)) : state.month.replace('.', '-');
+    a.download = `CM-Digital-Performance-${key}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     exportStatus('PNG downloaded ✓');
@@ -1675,7 +1768,8 @@ function initSlideExport() {
 
 // ---------- Bootstrap: month picker, theme toggle, render everything for the selected month ----------
 
-const state = { month: MONTHS[MONTHS.length - 1] };
+// slideMode: the top slide shows the selected month or its quarter ('#slide-q' opens the quarter slide directly)
+const state = { month: MONTHS[MONTHS.length - 1], slideMode: location.hash === '#slide-q' ? 'quarter' : 'month' };
 
 function renderAll() {
   const m = state.month;
@@ -1693,7 +1787,7 @@ function renderAll() {
   // Chart.js measures its box with getBoundingClientRect on creation, which includes CSS transforms:
   // unscale the slide while its charts are built, then scale it back to fit the page.
   document.getElementById('slide').style.transform = 'none';
-  renderSlide(m, shops, t);
+  renderSlide(state.slideMode === 'quarter' ? quarterSlideContext(m) : monthSlideContext(m, shops, t));
   fitSlide();
   renderKpis(t, p);
   renderConcentrationAlert(shops, t);
@@ -1739,8 +1833,29 @@ function initControls() {
 
 initControls();
 initSlideExport();
+initSlideModeToggle();
 if (SLIDE_ONLY) { document.body.classList.add('slide-only'); document.documentElement.dataset.theme = 'light'; } // slides are always light
 renderAll();
+
+/** Month / Quarter switch for the summary slide (the detail sections stay monthly). */
+function initSlideModeToggle() {
+  const box = document.getElementById('slide-mode');
+  const sync = () => {
+    const { y, q } = quarterKey(state.month);
+    box.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.mode === state.slideMode);
+      b.setAttribute('aria-pressed', b.dataset.mode === state.slideMode);
+      if (b.dataset.mode === 'quarter') b.textContent = `Quarter · Q${q} ${y}`;
+      if (b.dataset.mode === 'month') b.textContent = `Month · ${monthLabel(state.month)}`;
+    });
+  };
+  box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (state.slideMode === b.dataset.mode) return;
+    state.slideMode = b.dataset.mode; sync(); renderAll();
+  }));
+  document.getElementById('month-select').addEventListener('change', sync);
+  sync();
+}
 
   </script>
 </body>

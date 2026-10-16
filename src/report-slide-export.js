@@ -68,7 +68,8 @@ function initSlideExport() {
     const blob = await renderSlidePng();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `CM-Digital-Performance-${state.month.replace('.', '-')}.png`;
+    const key = state.slideMode === 'quarter' ? (({ y, q }) => `${y}-Q${q}`)(quarterKey(state.month)) : state.month.replace('.', '-');
+    a.download = `CM-Digital-Performance-${key}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     exportStatus('PNG downloaded ✓');

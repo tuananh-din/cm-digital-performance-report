@@ -1,6 +1,7 @@
 // ---------- Bootstrap: month picker, theme toggle, render everything for the selected month ----------
 
-const state = { month: MONTHS[MONTHS.length - 1] };
+// slideMode: the top slide shows the selected month or its quarter ('#slide-q' opens the quarter slide directly)
+const state = { month: MONTHS[MONTHS.length - 1], slideMode: location.hash === '#slide-q' ? 'quarter' : 'month' };
 
 function renderAll() {
   const m = state.month;
@@ -18,7 +19,7 @@ function renderAll() {
   // Chart.js measures its box with getBoundingClientRect on creation, which includes CSS transforms:
   // unscale the slide while its charts are built, then scale it back to fit the page.
   document.getElementById('slide').style.transform = 'none';
-  renderSlide(m, shops, t);
+  renderSlide(state.slideMode === 'quarter' ? quarterSlideContext(m) : monthSlideContext(m, shops, t));
   fitSlide();
   renderKpis(t, p);
   renderConcentrationAlert(shops, t);
@@ -64,5 +65,26 @@ function initControls() {
 
 initControls();
 initSlideExport();
+initSlideModeToggle();
 if (SLIDE_ONLY) { document.body.classList.add('slide-only'); document.documentElement.dataset.theme = 'light'; } // slides are always light
 renderAll();
+
+/** Month / Quarter switch for the summary slide (the detail sections stay monthly). */
+function initSlideModeToggle() {
+  const box = document.getElementById('slide-mode');
+  const sync = () => {
+    const { y, q } = quarterKey(state.month);
+    box.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.mode === state.slideMode);
+      b.setAttribute('aria-pressed', b.dataset.mode === state.slideMode);
+      if (b.dataset.mode === 'quarter') b.textContent = `Quarter · Q${q} ${y}`;
+      if (b.dataset.mode === 'month') b.textContent = `Month · ${monthLabel(state.month)}`;
+    });
+  };
+  box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (state.slideMode === b.dataset.mode) return;
+    state.slideMode = b.dataset.mode; sync(); renderAll();
+  }));
+  document.getElementById('month-select').addEventListener('change', sync);
+  sync();
+}

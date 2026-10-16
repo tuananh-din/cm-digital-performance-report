@@ -4,7 +4,8 @@ Monthly Channel Marketing report (Facebook Ads + store revenue), built as a sing
 
 - Live report (latest month): `index.html`
 - Monthly snapshots: `bao-cao-digital-performance-YYYY-MM.html`
-- Slide for decks: `slide-digital-performance-YYYY-MM.png`, or use **Download PNG / Copy PNG** at the top of the page (exports the slide for the selected month, 3200×1800, light theme)
+- Slides for decks: `slide-digital-performance-YYYY-MM.png` (month) and `slide-digital-performance-YYYY-Qn.png` (quarter), or switch **Month / Quarter** at the top of the page and use **Download PNG / Copy PNG** (3200×1800, light theme)
+- Quarter view = quarter-to-date of the selected month, compared with the same months of the previous quarter; quarter analyst notes live in `QUARTER_NOTES["YYYY-Qn"]` in `src/report-insights.js`
 
 ## Build a new month
 
