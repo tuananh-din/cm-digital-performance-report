@@ -1368,7 +1368,7 @@ const MONTH_NOTES = {
   '2026.09': {
     overall: c => `<b>Business:</b> ${c.money(c.t.rev)} sell-in (${c.mom(c.t.rev, c.p.rev)} vs ${c.ps}) for ${c.money(c.t.ad)} marketing cost,
       within plan (${c.pct(c.t.budgetUse, 0)}) → CIR ${c.pct(c.t.cir, 2)}, ROAS ${c.num(c.t.roas)}. <b>${c.t.hits}/${c.t.nT} stores hit the Q3-adjusted target</b>;
-      the rest were held back mainly by repeated stock-outs of Qrevo 2 Pro 5V1 and Qrevo Edge 2.
+      the rest were held back mainly by stock shortages of key models (Qrevo 2 Pro, 5V1, F25 Ultra, Qrevo Edge 2).
       ${c.slowing.length} on-target stores are slowing vs ${c.prior} (${c.names(c.slowing)}).
       <br><b>Digital:</b> messages ${c.mom(c.t.msg, c.p.msg)}, Cost/Message ${c.money(c.t.cpm)} (${c.mom(c.t.cpm, c.p.cpm)}),
       inbox purchases ${c.int(c.p.buy)} → ${c.int(c.t.buy)} (${c.mom(c.t.buy, c.p.buy)}).`,
@@ -1376,8 +1376,8 @@ const MONTH_NOTES = {
     shops: [
       ['Đại Hồng Phát', 'verify', c => { const x = c.s('Đại Hồng Phát'); return `${c.money(x.rev)} sell-in (${c.pct(x.achM, 0)} of plan, ${c.int(x.units)} units vs ${c.int(x.t_units)}) while its messages ${c.momShop(x, 'msg')} and spend ${c.momShop(x, 'ad')} — the jump is not digital-driven.`; },
         'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
-      ['BigMi', 'optimize', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Top' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total), partly from the Qrevo 2 Pro hero budget, so CIR ${c.pct(x.cir, 2)} sits above the Channel target. ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}, mainly limited by Qrevo 2 Pro stock-outs.`; },
-        'Align hero spend with Qrevo 2 Pro stock availability.'],
+      ['BigMi', 'optimize', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Top' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total), with no hero budget this month. Key models (5V1, Qrevo 2 Pro, F25 Ultra) were short, so spend pushed non-hero lines that convert less well: CIR ${c.pct(x.cir, 2)}, ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}.`; },
+        'Align spend with stock of key models; refocus once 5V1, Qrevo 2 Pro and F25 Ultra are back.'],
       ['CPS', 'fix', c => { const x = c.s('CPS'); return `Ran ${c.money(x.adCost)} with no budget plan for ${fmtAdj(x)} of adjusted target. Cost/Message ${c.money(x.cpm)} (${(x.cpm / c.t.cpm).toFixed(1)}× avg), CIR ${c.pct(x.cir, 2)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
         'Cap spend; agree KPIs and the KA model before running again.'],
       ['Mi360', 'keep', c => { const x = c.s('Mi360'); return `On adjusted target though only ${c.pct(x.achM, 0)} of plan (Jul–Aug front-loaded); sell-in ${c.trend(x)}. CIR ${c.pct(x.cir, 2)} is low partly because revenue includes e-commerce sales; FB budget is capped at the offline allowance (${c.pct(x.budgetUse, 0)} of plan used).`; },
@@ -1399,14 +1399,14 @@ const MONTH_NOTES = {
     ],
     slide: [
       ['target', '6/11 stores on Q3-adjusted target',
-        'Below: BigMi, H&T, CPS, Giang Chi, Domotek, mainly due to repeated stock-outs of Qrevo 2 Pro 5V1 and Qrevo Edge 2.',
+        'Below: BigMi, H&T, CPS, Giang Chi, Domotek, mainly due to stock shortages of key models (Qrevo 2 Pro, 5V1, F25 Ultra, Qrevo Edge 2).',
         'Prioritise high-volume MDs to keep beating target in Oct & Q4.'],
       ['efficiency', 'Revenue +34% on 10% less spend',
         'Spend ₫196.6M (84% of plan). CIR 0.87% → 0.58%. Cost/Message ₫19.9K vs ₫25K target.',
         'Keep the current setup; scale only where stock is available.'],
-      ['budget', 'CIR reflects funding source & channel mix',
-        'BigMi\'s higher CIR includes the Qrevo 2 Pro hero budget. Mi360\'s and Hotek\'s low CIR includes e-commerce sales.',
-        'Judge stores on offline impact, not CIR alone.'],
+      ['budget', 'CIR driven by stock mix & sales channel',
+        'Key models were short at BigMi, so spend pushed non-hero lines that convert less well (CIR 1.52%). Mi360\'s and Hotek\'s low CIR includes e-commerce sales.',
+        'Align spend with stock of key models; judge stores on offline impact.'],
       ['funnel', 'Inbox orders +63%; sales flow is the lever',
         'Orders from messages rose from 94 to 153. Danke has the strongest online sales flow; Cường Phát has the most room to improve.',
         'Roll out Danke\'s sales flow; test new solutions for small MDs & key dealers.'],
