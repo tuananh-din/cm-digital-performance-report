@@ -7,26 +7,26 @@
 //   slide            : [tag, headline, detail, action] — fixed text for the 1-page slide (3–4 real insights)
 const MONTH_NOTES = {
   '2026.09': {
-    overall: c => `<b>Business:</b> ${c.money(c.t.rev)} sell-in (${c.mom(c.t.rev, c.p.rev)} vs ${c.ps}) for ${c.money(c.t.ad)} marketing cost
-      → CIR ${c.pct(c.t.cir, 2)}, ROAS ${c.num(c.t.roas)}. <b>${c.t.hits}/${c.t.nT} stores hit the adjusted target</b>
-      (monthly plan only ${c.t.planHits}/${c.t.nT}), but ${c.slowing.length} of them are slowing vs ${c.prior} (${c.names(c.slowing)}).
-      Đại Hồng Phát alone is ${c.pct(c.s('Đại Hồng Phát').rev / c.t.rev, 0)} of sell-in.
+    overall: c => `<b>Business:</b> ${c.money(c.t.rev)} sell-in (${c.mom(c.t.rev, c.p.rev)} vs ${c.ps}) for ${c.money(c.t.ad)} marketing cost,
+      within plan (${c.pct(c.t.budgetUse, 0)}) → CIR ${c.pct(c.t.cir, 2)}, ROAS ${c.num(c.t.roas)}. <b>${c.t.hits}/${c.t.nT} stores hit the Q3-adjusted target</b>;
+      the rest were held back mainly by repeated stock-outs of Qrevo 2 Pro 5V1 and Qrevo Edge 2.
+      ${c.slowing.length} on-target stores are slowing vs ${c.prior} (${c.names(c.slowing)}).
       <br><b>Digital:</b> messages ${c.mom(c.t.msg, c.p.msg)}, Cost/Message ${c.money(c.t.cpm)} (${c.mom(c.t.cpm, c.p.cpm)}),
       inbox purchases ${c.int(c.p.buy)} → ${c.int(c.t.buy)} (${c.mom(c.t.buy, c.p.buy)}).`,
-    action: 'Action: move budget from BigMi & CPS to Mi360 and Hotek · re-activate the slowing on-target stores before Q4 · verify Đại Hồng Phát before closing the numbers.',
+    action: 'Action (Oct & Q4): prioritise high-volume MDs to keep beating target · roll out Danke\'s online sales flow to low-converting dealers such as Cường Phát · test new solutions for small MDs and key dealers below target.',
     shops: [
       ['Đại Hồng Phát', 'verify', c => { const x = c.s('Đại Hồng Phát'); return `${c.money(x.rev)} sell-in (${c.pct(x.achM, 0)} of plan, ${c.int(x.units)} units vs ${c.int(x.t_units)}) while its messages ${c.momShop(x, 'msg')} and spend ${c.momShop(x, 'ad')} — the jump is not digital-driven.`; },
         'Verify the order source (wholesale / project?) and keep it out of digital KPIs.'],
-      ['BigMi', 'fix', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Largest' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total) for ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}. ROAS ${c.num(x.roas)}, Cost/Message ${c.money(x.cpm)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
-        'Cut budget; rebuild audiences & creatives until Cost/Message < ₫20K.'],
+      ['BigMi', 'optimize', c => { const x = c.s('BigMi'); return `${c.isMax(x, 'adCost') ? 'Top' : 'High'} spend ${c.money(x.adCost)} (${c.pct(x.adCost / c.t.ad, 0)} of total), partly from the Qrevo 2 Pro hero budget, so CIR ${c.pct(x.cir, 2)} sits above the Channel target. ${fmtAdj(x)} of adjusted target (−${c.money(x.gap)}), sell-in ${c.trend(x)}, mainly limited by Qrevo 2 Pro stock-outs.`; },
+        'Align hero spend with Qrevo 2 Pro stock availability.'],
       ['CPS', 'fix', c => { const x = c.s('CPS'); return `Ran ${c.money(x.adCost)} with no budget plan for ${fmtAdj(x)} of adjusted target. Cost/Message ${c.money(x.cpm)} (${(x.cpm / c.t.cpm).toFixed(1)}× avg), CIR ${c.pct(x.cir, 2)}, ${c.int(n0(x.purchase_msg))} inbox orders.`; },
         'Cap spend; agree KPIs and the KA model before running again.'],
-      ['Mi360', 'scale', c => { const x = c.s('Mi360'); return `On adjusted target though only ${c.pct(x.achM, 0)} of plan (Jul–Aug front-loaded); sell-in ${c.trend(x)}. ${c.isMin(x, 'cpm') ? 'Lowest' : 'Low'} Cost/Message ${c.money(x.cpm)}, ROAS ${c.num(x.roas)}, but used only ${c.pct(x.budgetUse, 0)} of budget; messages ${c.momShop(x, 'msg')}.`; },
-        'Raise budget to win back message volume, keep Cost/Message ≤ ₫16K.'],
-      ['Hotek', 'scale', c => { const x = c.s('Hotek'); return `On target (${c.pct(x.achM, 0)} of plan), sell-in ${c.trend(x)}. ${c.int(n0(x.purchase_msg))} inbox orders${c.isMax(x, 'purchase_msg') ? ' — highest of all stores —' : ''} at ${c.money(x.cpm)}/message; used ${c.pct(x.budgetUse, 0)} of budget.`; },
-        'Keep and add budget; copy its inbox script to other stores.'],
+      ['Mi360', 'keep', c => { const x = c.s('Mi360'); return `On adjusted target though only ${c.pct(x.achM, 0)} of plan (Jul–Aug front-loaded); sell-in ${c.trend(x)}. CIR ${c.pct(x.cir, 2)} is low partly because revenue includes e-commerce sales; FB budget is capped at the offline allowance (${c.pct(x.budgetUse, 0)} of plan used).`; },
+        'Keep budget at the offline allowance; judge on offline impact, not CIR.'],
+      ['Hotek', 'keep', c => { const x = c.s('Hotek'); return `On target (${c.pct(x.achM, 0)} of plan), sell-in ${c.trend(x)}. ${c.int(n0(x.purchase_msg))} inbox orders${c.isMax(x, 'purchase_msg') ? ' — highest of all stores' : ''}; CIR below 1% partly reflects e-commerce sales.`; },
+        'Maintain; judge on offline impact rather than CIR alone.'],
       ['Cường Phát', 'keep', c => { const x = c.s('Cường Phát'); return `Met adjusted target only thanks to Jul–Aug: ${c.pct(x.achM, 0)} of plan, sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} is fine, but 2-way rate only ${c.pct(x.r2, 0)}.`; },
-        'Conversion is the bottleneck: faster inbox replies and follow-ups before Q4.'],
+        'Adopt Danke\'s online sales flow to lift conversion.'],
       ['Danke', 'keep', c => { const x = c.s('Danke'); return `On target (${c.pct(x.achM, 0)} of plan) but sell-in ${c.trend(x)}. Cost/Message ${c.money(x.cpm)} (${c.momShop(x, 'cpm')}), ${c.int(n0(x.purchase_msg))} inbox orders, 5-way/2-way ${c.pct(x.r5, 0)}.`; },
         'Keep spend and use its chat flow as the benchmark; watch sell-in.'],
       ['Homecare', 'keep', c => { const x = c.s('Homecare'); return `On target (${c.pct(x.achM, 0)} of plan) on a small ${c.money(x.adCost)} budget, but sell-in ${c.trend(x)}; Cost/Message ${c.money(x.cpm)}.`; },
@@ -39,18 +39,18 @@ const MONTH_NOTES = {
         'Reduce budget or change the hero offer.'],
     ],
     slide: [
-      ['target', '6/11 stores on target, only 4/11 on plan',
-        'Mi360 (98% of plan) and Cường Phát (72%) front-loaded stock-in in Jul–Aug, so Sep still closes Q3. Below: BigMi, CPS, Giang Chi, H&T, Domotek (−₫50M).',
-        'Push only these 5; Domotek is one order away.'],
-      ['budget', '44% of ad spend went to stores below target',
-        'BigMi spent most (₫34.3M) for 35% of target, ROAS 66. CPS spent ₫21.6M off-plan at ₫48.3K/msg, 0 inbox orders.',
-        'Shift to Mi360: ₫12.2K/msg, only 21% of budget used.'],
-      ['funnel', 'Messages −13%, inbox purchases +63%',
-        '94 → 153 orders while Cost/Message +4% (₫19.9K). Hotek + Danke bring 41% of inbox orders at ₫12.9–15.0K/msg.',
-        'Roll out their chat script to the other stores.'],
-      ['verify', 'Đại Hồng Phát = 50% of revenue, not digital',
-        '₫16.92B, 1,780 units vs 233 target while its messages −7.5%. Excluding it: ROAS 103, CIR 0.97%.',
-        'Verify the source; report it outside digital KPIs.'],
+      ['target', '6/11 stores on Q3-adjusted target',
+        'Below: BigMi, H&T, CPS, Giang Chi, Domotek, mainly due to repeated stock-outs of Qrevo 2 Pro 5V1 and Qrevo Edge 2.',
+        'Prioritise high-volume MDs to keep beating target in Oct & Q4.'],
+      ['efficiency', 'Revenue +34% on 10% less spend',
+        'Spend ₫196.6M (84% of plan). CIR 0.87% → 0.58%. Cost/Message ₫19.9K vs ₫25K target.',
+        'Keep the current setup; scale only where stock is available.'],
+      ['budget', 'Read store CIR in context',
+        'BigMi\'s higher CIR includes the Qrevo 2 Pro hero budget. Mi360\'s and Hotek\'s low CIR includes e-commerce sales.',
+        'Judge stores on offline impact, not CIR alone.'],
+      ['funnel', 'Inbox orders +63%; sales flow is the lever',
+        'Orders from messages rose from 94 to 153. Danke has the strongest online sales flow; Cường Phát has the most room to improve.',
+        'Roll out Danke\'s sales flow; test new solutions for small MDs & key dealers.'],
     ],
     quality: ['The internal dashboard shows ROAS <b>115.82</b> · CIR <b>0.86%</b> · Cost/Message <b>₫20,813</b> — these are <b>Q3 cumulative (Jul–Sep)</b>, while Amount Spent ₫196.6M is September only. The cards mix two periods → label the period or use one filter.'],
   },
@@ -58,7 +58,7 @@ const MONTH_NOTES = {
 
 const TAG_LABEL = {
   scale: 'SCALE', fix: 'FIX', optimize: 'OPTIMIZE', verify: 'VERIFY', keep: 'MAINTAIN',
-  target: 'TARGET', budget: 'BUDGET', funnel: 'FUNNEL',
+  target: 'TARGET', budget: 'BUDGET', funnel: 'FUNNEL', efficiency: 'EFFICIENCY',
 };
 
 /** Rule-based takeaways for months that have no hand-written note. */

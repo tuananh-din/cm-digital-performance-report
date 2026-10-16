@@ -290,7 +290,7 @@ select:focus-visible, button:focus-visible, th:focus-visible { outline: 3px soli
 .st-act { font-size: 12px; font-weight: 700; color: var(--brand); line-height: 1.35; }
 .sf-v i { font-style: normal; font-weight: 700; font-size: 11px; margin-left: 2px; }
 .sf-v i.up { color: var(--good); } .sf-v i.down { color: var(--bad); }
-.tag.target { background: var(--brand); } .tag.budget { background: var(--bad); } .tag.funnel { background: var(--good); }
+.tag.target { background: var(--brand); } .tag.budget { background: var(--warn); } .tag.funnel { background: var(--line2); } .tag.efficiency { background: var(--good); }
 /* "#slide" mode: only the slide at native size — used for PNG export */
 body.slide-only { background: var(--surface); }
 body.slide-only .page { padding: 0; max-width: none; }

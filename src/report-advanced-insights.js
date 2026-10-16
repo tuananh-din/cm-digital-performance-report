@@ -1,5 +1,9 @@
 // ---------- Auto-computed deeper insights for the selected month (works for any month) ----------
 
+// Stores whose sell-in also includes e-commerce sales: their CIR is not purely driven by FB ads,
+// and their FB budget is capped at the offline allowance — exclude them from "best value" rankings.
+const ECOM_STORES = ['Mi360', 'Hotek'];
+
 function insightCard(kicker, big, text, tone = '') {
   return `<div class="ins ${tone}"><div class="ins-k">${kicker}</div><div class="ins-big">${big}</div><p>${text}</p></div>`;
 }
@@ -16,10 +20,10 @@ function renderAdvancedInsights(shops, t) {
     `of ad spend (${fmtMoney(missSpend)}) goes to <b>${missing.length} stores below adjusted target</b>: ${names(missing.sort((a, b) => b.adCost - a.adCost))}.`, 'bad'));
 
   // 2. Best-value shops: cheaper than average per message AND on target
-  const value = spent.filter(s => s.cpm != null && s.cpm <= t.cpm && s.ach >= 1);
+  const value = spent.filter(s => s.cpm != null && s.cpm <= t.cpm && s.ach >= 1 && !ECOM_STORES.some(e => s.name.startsWith(e)));
   const valueSpend = value.reduce((a, s) => a + s.adCost, 0);
   cards.push(insightCard('Best-value stores', `${value.length} stores`,
-    `Cost/Message ≤ average (${fmtMoney(t.cpm)}) and on target: <b>${names(value)}</b> — they get only ${fmtPct(div(valueSpend, t.ad), 0)} of the budget.`, 'good'));
+    `Cost/Message ≤ average (${fmtMoney(t.cpm)}) and on target (excl. e-commerce stores ${ECOM_STORES.join(', ')}): <b>${names(value)}</b> — they get only ${fmtPct(div(valueSpend, t.ad), 0)} of the budget.`, 'good'));
 
   // 2b. Momentum: stores that met the adjusted target only thanks to earlier months
   if (t.momentum) {
